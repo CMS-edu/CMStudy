@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api_client.dart';
@@ -11,6 +11,11 @@ class AppController extends ChangeNotifier {
 
   static const tokenKey = 'cmstudy.accessToken';
   static const userKey = 'cmstudy.user';
+  static const themeModeKey = 'cmstudy.themeMode';
+  static const accentColorKey = 'cmstudy.accentColor';
+  static const showPlansOnHomeKey = 'cmstudy.showPlansOnHome';
+  static const showImagesKey = 'cmstudy.showImages';
+  static const denseStatsKey = 'cmstudy.denseStats';
 
   final ApiClient api;
 
@@ -19,11 +24,18 @@ class AppController extends ChangeNotifier {
   List<StudyTask> tasks = const [];
   StudyStats stats = StudyStats.empty;
   DateTime selectedDate = DateTime.now();
+  ThemeMode themeMode = ThemeMode.system;
+  int accentColorValue = 0xFF2563EB;
+  bool showPlansOnHome = false;
+  bool showImages = true;
+  bool denseStats = true;
   bool isInitialized = false;
   bool isBusy = false;
   String? errorMessage;
 
   bool get isAuthenticated => user != null && api.token != null;
+
+  Color get accentColor => Color(accentColorValue);
 
   int get openTaskCount => tasks.where((task) => !task.isDone).length;
 
@@ -57,6 +69,7 @@ class AppController extends ChangeNotifier {
 
   Future<void> restoreSession() async {
     final preferences = await SharedPreferences.getInstance();
+    loadSettings(preferences);
     final savedToken = preferences.getString(tokenKey);
     final savedUser = preferences.getString(userKey);
     if (savedToken == null || savedUser == null) {
@@ -75,6 +88,53 @@ class AppController extends ChangeNotifier {
       isInitialized = true;
       notifyListeners();
     }
+  }
+
+  void loadSettings(SharedPreferences preferences) {
+    themeMode = switch (preferences.getString(themeModeKey)) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+    accentColorValue = preferences.getInt(accentColorKey) ?? 0xFF2563EB;
+    showPlansOnHome = preferences.getBool(showPlansOnHomeKey) ?? false;
+    showImages = preferences.getBool(showImagesKey) ?? true;
+    denseStats = preferences.getBool(denseStatsKey) ?? true;
+  }
+
+  Future<void> setThemeMode(ThemeMode value) async {
+    themeMode = value;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(themeModeKey, value.name);
+    notifyListeners();
+  }
+
+  Future<void> setAccentColor(Color value) async {
+    accentColorValue = value.toARGB32();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt(accentColorKey, accentColorValue);
+    notifyListeners();
+  }
+
+  Future<void> setShowPlansOnHome(bool value) async {
+    showPlansOnHome = value;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(showPlansOnHomeKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setShowImages(bool value) async {
+    showImages = value;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(showImagesKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setDenseStats(bool value) async {
+    denseStats = value;
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setBool(denseStatsKey, value);
+    notifyListeners();
   }
 
   Future<void> setSession(AuthResult result) async {

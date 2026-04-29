@@ -68,27 +68,29 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ),
             ),
-          const SizedBox(height: 18),
-          _SectionTitle(
-            title: '오늘 할 일',
-            trailing: '${controller.tasks.length}개',
-          ),
-          const SizedBox(height: 10),
-          if (controller.tasks.isEmpty)
-            const _EmptyCard(text: '오늘 계획이 아직 없습니다.')
-          else
-            ...controller.tasks
-                .take(5)
-                .map(
-                  (task) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: _TaskTile(
-                      task: task,
-                      onToggle: () => controller.toggleTask(task.id),
+          if (controller.showPlansOnHome) ...[
+            const SizedBox(height: 18),
+            _SectionTitle(
+              title: '오늘 할 일',
+              trailing: '${controller.tasks.length}개',
+            ),
+            const SizedBox(height: 10),
+            if (controller.tasks.isEmpty)
+              const _EmptyCard(text: '오늘 계획이 아직 없습니다.')
+            else
+              ...controller.tasks
+                  .take(5)
+                  .map(
+                    (task) => Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: _TaskTile(
+                        task: task,
+                        onToggle: () => controller.toggleTask(task.id),
+                      ),
                     ),
                   ),
-                ),
-          const SizedBox(height: 18),
+            const SizedBox(height: 18),
+          ],
         ],
       ),
     );

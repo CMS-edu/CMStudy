@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../state/app_controller.dart';
-import '../planner/planner_screen.dart';
+import '../settings/settings_screen.dart';
 import '../stats/stats_screen.dart';
 import '../subjects/subjects_screen.dart';
 import '../timer/focus_timer_screen.dart';
@@ -23,10 +23,9 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     final screens = [
       DashboardScreen(controller: widget.controller),
-      PlannerScreen(controller: widget.controller),
-      SubjectsScreen(controller: widget.controller),
       FocusTimerScreen(controller: widget.controller),
       StatsScreen(controller: widget.controller),
+      SubjectsScreen(controller: widget.controller),
     ];
 
     return Scaffold(
@@ -39,9 +38,15 @@ class _HomeShellState extends State<HomeShell> {
             tooltip: '새로고침',
           ),
           IconButton(
-            onPressed: widget.controller.logout,
-            icon: const Icon(Icons.logout),
-            tooltip: '로그아웃',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => SettingsScreen(controller: widget.controller),
+                ),
+              );
+            },
+            icon: const Icon(Icons.settings_outlined),
+            tooltip: '설정',
           ),
         ],
       ),
@@ -56,16 +61,6 @@ class _HomeShellState extends State<HomeShell> {
             label: '홈',
           ),
           NavigationDestination(
-            icon: Icon(Icons.checklist_outlined),
-            selectedIcon: Icon(Icons.checklist),
-            label: '계획',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.palette_outlined),
-            selectedIcon: Icon(Icons.palette),
-            label: '과목',
-          ),
-          NavigationDestination(
             icon: Icon(Icons.timer_outlined),
             selectedIcon: Icon(Icons.timer),
             label: '기록',
@@ -74,6 +69,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.bar_chart_outlined),
             selectedIcon: Icon(Icons.bar_chart),
             label: '통계',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.palette_outlined),
+            selectedIcon: Icon(Icons.palette),
+            label: '과목',
           ),
         ],
       ),

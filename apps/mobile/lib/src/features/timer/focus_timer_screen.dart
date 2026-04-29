@@ -79,8 +79,10 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
               padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
               child: Column(
                 children: [
-                  Image.asset(AppAssets.focusTimer, height: 118),
-                  const SizedBox(height: 12),
+                  if (widget.controller.showImages) ...[
+                    Image.asset(AppAssets.focusTimer, height: 118),
+                    const SizedBox(height: 12),
+                  ],
                   if (subject == null)
                     const Text('먼저 과목을 추가하세요.')
                   else

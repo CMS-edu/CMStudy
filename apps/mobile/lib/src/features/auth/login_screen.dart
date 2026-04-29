@@ -38,15 +38,18 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.all(24),
               shrinkWrap: true,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Image.asset(
-                    AppAssets.loginHero,
-                    height: 180,
-                    fit: BoxFit.cover,
+                if (widget.controller.showImages) ...[
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      AppAssets.loginHero,
+                      height: 180,
+                      fit: BoxFit.cover,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
+                ] else
+                  const SizedBox(height: 32),
                 Text(
                   'CMStudy',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(

@@ -83,8 +83,10 @@ class StatsScreen extends StatelessWidget {
                 if (daily.every((item) => item.minutes == 0))
                   Column(
                     children: [
-                      Image.asset(AppAssets.emptyStats, height: 160),
-                      const SizedBox(height: 10),
+                      if (controller.showImages) ...[
+                        Image.asset(AppAssets.emptyStats, height: 160),
+                        const SizedBox(height: 10),
+                      ],
                       const Text(
                         '아직 집중 기록이 없습니다.',
                         style: TextStyle(color: Colors.blueGrey),
@@ -135,6 +137,10 @@ class StatsScreen extends StatelessWidget {
           subjects: controller.subjects,
           emptyText: '이번 주 과목별 기록이 아직 없습니다.',
         ),
+        if (controller.denseStats) ...[
+          const SizedBox(height: 16),
+          _DeepStatsCard(controller: controller),
+        ],
       ],
     );
   }
@@ -211,11 +217,123 @@ class _SubjectStatsCard extends StatelessWidget {
   }
 }
 
+class _DeepStatsCard extends StatelessWidget {
+  const _DeepStatsCard({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final todayTarget = controller.subjects.fold<int>(
+      0,
+      (sum, subject) => sum + subject.targetMinutesPerDay,
+    );
+    final todayRate = todayTarget == 0
+        ? 0
+        : ((controller.stats.focusedToday / todayTarget) * 100).round();
+    final activeDays = controller.stats.daily
+        .where((item) => item.minutes > 0)
+        .length;
+    final average = controller.stats.daily.isEmpty
+        ? 0
+        : (controller.stats.weeklyTotal / controller.stats.daily.length)
+              .round();
+    final bestDay = controller.stats.daily.fold<DailyFocus?>(
+      null,
+      (best, item) => best == null || item.minutes > best.minutes ? item : best,
+    );
+    final streak = currentStreak(controller.stats.daily);
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '분석',
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                _InsightChip(label: '목표 달성률', value: '$todayRate%'),
+                _InsightChip(label: '연속 공부일', value: '$streak일'),
+                _InsightChip(label: '공부한 날', value: '$activeDays일'),
+                _InsightChip(label: '하루 평균', value: formatMinutes(average)),
+                _InsightChip(
+                  label: '최고 기록',
+                  value: bestDay == null
+                      ? '0분'
+                      : formatMinutes(bestDay.minutes),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: (todayRate / 100).clamp(0.0, 1.0),
+                minHeight: 9,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InsightChip extends StatelessWidget {
+  const _InsightChip({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 142,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.blueGrey)),
+          const SizedBox(height: 5),
+          Text(
+            value,
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 StudySubject? findSubjectByName(List<StudySubject> subjects, String name) {
   for (final subject in subjects) {
     if (subject.name == name) return subject;
   }
   return null;
+}
+
+int currentStreak(List<DailyFocus> daily) {
+  var count = 0;
+  for (final item in daily.reversed) {
+    if (item.minutes <= 0) break;
+    count += 1;
+  }
+  return count;
 }
 
 class _StatValue extends StatelessWidget {

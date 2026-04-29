@@ -36,22 +36,9 @@ class _CmStudyAppState extends State<CmStudyApp> {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           title: 'CMStudy',
-          theme: ThemeData(
-            useMaterial3: true,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF2563EB),
-              brightness: Brightness.light,
-            ),
-            scaffoldBackgroundColor: const Color(0xFFF6F7F9),
-            cardTheme: const CardThemeData(
-              elevation: 0,
-              margin: EdgeInsets.zero,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.all(Radius.circular(12)),
-                side: BorderSide(color: Color(0xFFE1E7EF)),
-              ),
-            ),
-          ),
+          themeMode: controller.themeMode,
+          theme: buildTheme(controller.accentColor, Brightness.light),
+          darkTheme: buildTheme(controller.accentColor, Brightness.dark),
           home: controller.isAuthenticated
               ? HomeShell(controller: controller)
               : controller.isInitialized
@@ -61,6 +48,40 @@ class _CmStudyAppState extends State<CmStudyApp> {
       },
     );
   }
+}
+
+ThemeData buildTheme(Color seedColor, Brightness brightness) {
+  final colorScheme = ColorScheme.fromSeed(
+    seedColor: seedColor,
+    brightness: brightness,
+  );
+  final isDark = brightness == Brightness.dark;
+  return ThemeData(
+    useMaterial3: true,
+    colorScheme: colorScheme,
+    scaffoldBackgroundColor: isDark
+        ? const Color(0xFF0F172A)
+        : const Color(0xFFF6F7F9),
+    appBarTheme: AppBarTheme(
+      centerTitle: false,
+      backgroundColor: isDark
+          ? const Color(0xFF0F172A)
+          : const Color(0xFFF6F7F9),
+      foregroundColor: colorScheme.onSurface,
+      elevation: 0,
+    ),
+    cardTheme: CardThemeData(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      color: isDark ? const Color(0xFF111827) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: const BorderRadius.all(Radius.circular(10)),
+        side: BorderSide(
+          color: isDark ? const Color(0xFF243044) : const Color(0xFFE1E7EF),
+        ),
+      ),
+    ),
+  );
 }
 
 class _SplashScreen extends StatelessWidget {

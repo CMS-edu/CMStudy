@@ -68,7 +68,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(
             icon: Icon(Icons.timer_outlined),
             selectedIcon: Icon(Icons.timer),
-            label: '집중',
+            label: '기록',
           ),
           NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),

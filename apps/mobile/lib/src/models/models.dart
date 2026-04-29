@@ -96,24 +96,34 @@ class StudyStats {
   const StudyStats({
     required this.focusedToday,
     required this.weeklyTotal,
+    required this.totalMinutes,
     required this.daily,
     required this.subjectMinutes,
+    required this.todaySubjectMinutes,
   });
 
   final int focusedToday;
   final int weeklyTotal;
+  final int totalMinutes;
   final List<DailyFocus> daily;
   final Map<String, int> subjectMinutes;
+  final Map<String, int> todaySubjectMinutes;
 
   factory StudyStats.fromJson(Map<String, dynamic> json) {
     final subjects = json['subjectMinutes'] as Map<String, dynamic>? ?? {};
+    final todaySubjects =
+        json['todaySubjectMinutes'] as Map<String, dynamic>? ?? {};
     return StudyStats(
       focusedToday: json['focusedToday'] as int? ?? 0,
       weeklyTotal: json['weeklyTotal'] as int? ?? 0,
+      totalMinutes: json['totalMinutes'] as int? ?? 0,
       daily: (json['daily'] as List<dynamic>? ?? [])
           .map((item) => DailyFocus.fromJson(item as Map<String, dynamic>))
           .toList(),
       subjectMinutes: subjects.map(
+        (key, value) => MapEntry(key, value as int? ?? 0),
+      ),
+      todaySubjectMinutes: todaySubjects.map(
         (key, value) => MapEntry(key, value as int? ?? 0),
       ),
     );
@@ -122,8 +132,10 @@ class StudyStats {
   static const empty = StudyStats(
     focusedToday: 0,
     weeklyTotal: 0,
+    totalMinutes: 0,
     daily: [],
     subjectMinutes: {},
+    todaySubjectMinutes: {},
   );
 }
 

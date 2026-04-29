@@ -10,13 +10,6 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completionRate = controller.tasks.isEmpty
-        ? 0
-        : ((controller.tasks.length - controller.openTaskCount) /
-                  controller.tasks.length *
-                  100)
-              .round();
-
     return RefreshIndicator(
       onRefresh: controller.loadDashboard,
       child: ListView(
@@ -29,36 +22,52 @@ class DashboardScreen extends StatelessWidget {
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
           ),
           const SizedBox(height: 4),
-          Text(
-            '오늘 집중 ${formatMinutes(controller.stats.focusedToday)} · 계획 완료율 $completionRate%',
-            style: const TextStyle(color: Colors.blueGrey),
+          const Text(
+            '과목별 스탑워치로 오늘 공부량을 쌓아가세요.',
+            style: TextStyle(color: Colors.blueGrey),
           ),
           const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: _MetricCard(
-                  label: '남은 계획',
-                  value: '${controller.openTaskCount}개',
-                  icon: Icons.assignment_outlined,
+                  label: '오늘 누적',
+                  value: formatMinutes(controller.stats.focusedToday),
+                  icon: Icons.timer_outlined,
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _MetricCard(
-                  label: '계획 시간',
-                  value: formatMinutes(controller.plannedMinutesToday),
-                  icon: Icons.event_available_outlined,
+                  label: '이번 주',
+                  value: formatMinutes(controller.stats.weeklyTotal),
+                  icon: Icons.calendar_view_week_outlined,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
           _MetricCard(
-            label: '오늘 집중',
-            value: formatMinutes(controller.stats.focusedToday),
-            icon: Icons.local_fire_department_outlined,
+            label: '전체 누적',
+            value: formatMinutes(controller.stats.totalMinutes),
+            icon: Icons.all_inclusive,
           ),
+          const SizedBox(height: 18),
+          const _SectionTitle(title: '오늘 과목별 공부량'),
+          const SizedBox(height: 10),
+          if (controller.subjects.isEmpty)
+            const _EmptyCard(text: '과목 탭에서 과목을 추가하세요.')
+          else
+            ...controller.subjects.map(
+              (subject) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: _SubjectProgressTile(
+                  subject: subject,
+                  minutes:
+                      controller.stats.todaySubjectMinutes[subject.name] ?? 0,
+                ),
+              ),
+            ),
           const SizedBox(height: 18),
           _SectionTitle(
             title: '오늘 할 일',
@@ -80,29 +89,74 @@ class DashboardScreen extends StatelessWidget {
                   ),
                 ),
           const SizedBox(height: 18),
-          const _SectionTitle(title: '과목별 목표'),
-          const SizedBox(height: 10),
-          ...controller.subjects.map(
-            (subject) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: parseColor(subject.color),
-                    child: Text(
-                      subject.name.characters.first,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  title: Text(subject.name),
-                  subtitle: Text(
-                    '하루 목표 ${formatMinutes(subject.targetMinutesPerDay)} · 이번 주 ${formatMinutes(controller.stats.subjectMinutes[subject.name] ?? 0)}',
+        ],
+      ),
+    );
+  }
+}
+
+class _SubjectProgressTile extends StatelessWidget {
+  const _SubjectProgressTile({required this.subject, required this.minutes});
+
+  final StudySubject subject;
+  final int minutes;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = parseColor(subject.color);
+    final progress = subject.targetMinutesPerDay == 0
+        ? 0.0
+        : (minutes / subject.targetMinutesPerDay).clamp(0.0, 1.0);
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: color,
+                  child: Text(
+                    subject.name.characters.first,
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        subject.name,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      Text(
+                        '목표 ${formatMinutes(subject.targetMinutesPerDay)}',
+                        style: const TextStyle(color: Colors.blueGrey),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  formatMinutes(minutes),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 8,
+                color: color,
+                backgroundColor: color.withAlpha(28),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

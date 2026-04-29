@@ -26,9 +26,19 @@ export class StatsService {
       include: { subject: true },
       orderBy: { startedAt: 'asc' },
     });
+    const allSessions = await this.prisma.studySession.findMany({
+      where: { userId },
+      select: { durationMinutes: true },
+    });
 
     const daily = new Map(dateKeys.map((date) => [date, 0]));
     const subjectMinutes: Record<string, number> = {};
+    const todaySubjectMinutes: Record<string, number> = {};
+    let totalMinutes = 0;
+
+    for (const session of allSessions) {
+      totalMinutes += session.durationMinutes;
+    }
 
     for (const session of sessions) {
       const key = toLocalDateKey(session.startedAt, timezoneOffsetMinutes);
@@ -36,6 +46,11 @@ export class StatsService {
       if (session.subject) {
         subjectMinutes[session.subject.name] =
           (subjectMinutes[session.subject.name] ?? 0) + session.durationMinutes;
+        if (key === dateKeys[dateKeys.length - 1]) {
+          todaySubjectMinutes[session.subject.name] =
+            (todaySubjectMinutes[session.subject.name] ?? 0) +
+            session.durationMinutes;
+        }
       }
     }
 
@@ -48,8 +63,10 @@ export class StatsService {
     return {
       focusedToday: daily.get(today) ?? 0,
       weeklyTotal: dailyList.reduce((sum, item) => sum + item.minutes, 0),
+      totalMinutes,
       daily: dailyList,
       subjectMinutes,
+      todaySubjectMinutes,
     };
   }
 }

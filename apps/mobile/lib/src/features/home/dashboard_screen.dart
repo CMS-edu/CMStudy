@@ -10,16 +10,28 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final completionRate = controller.tasks.isEmpty
+        ? 0
+        : ((controller.tasks.length - controller.openTaskCount) /
+                  controller.tasks.length *
+                  100)
+              .round();
+
     return RefreshIndicator(
       onRefresh: controller.loadDashboard,
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '${controller.user?.nickname ?? ''}님의 오늘',
+            '${controller.user?.nickname ?? ''}님의 공부',
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '오늘 집중 ${formatMinutes(controller.stats.focusedToday)} · 계획 완료율 $completionRate%',
+            style: const TextStyle(color: Colors.blueGrey),
           ),
           const SizedBox(height: 16),
           Row(
@@ -84,7 +96,7 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   title: Text(subject.name),
                   subtitle: Text(
-                    '하루 목표 ${formatMinutes(subject.targetMinutesPerDay)}',
+                    '하루 목표 ${formatMinutes(subject.targetMinutesPerDay)} · 이번 주 ${formatMinutes(controller.stats.subjectMinutes[subject.name] ?? 0)}',
                   ),
                 ),
               ),

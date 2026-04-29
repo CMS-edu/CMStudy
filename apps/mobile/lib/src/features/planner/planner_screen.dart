@@ -14,11 +14,44 @@ class PlannerScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(
-            '공부 계획',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '공부 계획',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              IconButton.outlined(
+                onPressed: () => _changeDate(controller, -1),
+                icon: const Icon(Icons.chevron_left),
+                tooltip: '이전 날짜',
+              ),
+              const SizedBox(width: 6),
+              IconButton.outlined(
+                onPressed: () => _pickDate(context, controller),
+                icon: const Icon(Icons.calendar_month),
+                tooltip: '날짜 선택',
+              ),
+              const SizedBox(width: 6),
+              IconButton.outlined(
+                onPressed: () => _changeDate(controller, 1),
+                icon: const Icon(Icons.chevron_right),
+                tooltip: '다음 날짜',
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.today_outlined),
+              title: Text(dateLabel(controller.selectedDate)),
+              subtitle: Text(
+                '${controller.tasks.length}개 계획 · ${formatMinutes(controller.plannedMinutesToday)}',
+              ),
+            ),
           ),
           const SizedBox(height: 14),
           if (controller.tasks.isEmpty)
@@ -26,7 +59,7 @@ class PlannerScreen extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.all(22),
                 child: Text(
-                  '오늘 계획을 추가해보세요.',
+                  '선택한 날짜에 계획이 없습니다.',
                   style: TextStyle(color: Colors.blueGrey),
                   textAlign: TextAlign.center,
                 ),
@@ -158,6 +191,7 @@ Future<void> _showTaskSheet(BuildContext context, AppController controller) {
                       subjectId: subjectId,
                       title: title,
                       plannedMinutes: minutes,
+                      plannedDate: controller.selectedDate,
                     );
                     if (context.mounted) Navigator.pop(context);
                   },
@@ -173,4 +207,36 @@ Future<void> _showTaskSheet(BuildContext context, AppController controller) {
       );
     },
   );
+}
+
+Future<void> _changeDate(AppController controller, int delta) {
+  return controller.goToDate(
+    controller.selectedDate.add(Duration(days: delta)),
+  );
+}
+
+Future<void> _pickDate(BuildContext context, AppController controller) async {
+  final selected = await showDatePicker(
+    context: context,
+    initialDate: controller.selectedDate,
+    firstDate: DateTime.now().subtract(const Duration(days: 365)),
+    lastDate: DateTime.now().add(const Duration(days: 365)),
+  );
+  if (selected != null) {
+    await controller.goToDate(selected);
+  }
+}
+
+String dateLabel(DateTime date) {
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final target = DateTime(date.year, date.month, date.day);
+  final diff = target.difference(today).inDays;
+  return switch (diff) {
+    0 => '오늘',
+    1 => '내일',
+    -1 => '어제',
+    _ =>
+      '${date.year}.${date.month.toString().padLeft(2, '0')}.${date.day.toString().padLeft(2, '0')}',
+  };
 }

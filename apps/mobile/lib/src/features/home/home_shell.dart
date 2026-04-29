@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../state/app_controller.dart';
 import '../planner/planner_screen.dart';
 import '../stats/stats_screen.dart';
+import '../subjects/subjects_screen.dart';
 import '../timer/focus_timer_screen.dart';
 import 'dashboard_screen.dart';
 
@@ -23,6 +24,7 @@ class _HomeShellState extends State<HomeShell> {
     final screens = [
       DashboardScreen(controller: widget.controller),
       PlannerScreen(controller: widget.controller),
+      SubjectsScreen(controller: widget.controller),
       FocusTimerScreen(controller: widget.controller),
       StatsScreen(controller: widget.controller),
     ];
@@ -57,6 +59,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.checklist_outlined),
             selectedIcon: Icon(Icons.checklist),
             label: '계획',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.palette_outlined),
+            selectedIcon: Icon(Icons.palette),
+            label: '과목',
           ),
           NavigationDestination(
             icon: Icon(Icons.timer_outlined),

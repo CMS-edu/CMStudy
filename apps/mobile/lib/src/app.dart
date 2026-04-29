@@ -19,6 +19,7 @@ class _CmStudyAppState extends State<CmStudyApp> {
   void initState() {
     super.initState();
     controller = AppController(ApiClient());
+    controller.restoreSession();
   }
 
   @override
@@ -53,9 +54,20 @@ class _CmStudyAppState extends State<CmStudyApp> {
           ),
           home: controller.isAuthenticated
               ? HomeShell(controller: controller)
-              : LoginScreen(controller: controller),
+              : controller.isInitialized
+              ? LoginScreen(controller: controller)
+              : const _SplashScreen(),
         );
       },
     );
+  }
+}
+
+class _SplashScreen extends StatelessWidget {
+  const _SplashScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 }

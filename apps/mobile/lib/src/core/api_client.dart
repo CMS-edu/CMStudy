@@ -72,6 +72,45 @@ class ApiClient {
     return DashboardData.fromJson(json);
   }
 
+  Future<StudySubject> createSubject({
+    required String name,
+    required String color,
+    required int targetMinutesPerDay,
+  }) async {
+    final json = await _request(
+      'POST',
+      '/subjects',
+      body: {
+        'name': name,
+        'color': color,
+        'targetMinutesPerDay': targetMinutesPerDay,
+      },
+    );
+    return StudySubject.fromJson(json);
+  }
+
+  Future<StudySubject> updateSubject({
+    required String id,
+    required String name,
+    required String color,
+    required int targetMinutesPerDay,
+  }) async {
+    final json = await _request(
+      'PATCH',
+      '/subjects/$id',
+      body: {
+        'name': name,
+        'color': color,
+        'targetMinutesPerDay': targetMinutesPerDay,
+      },
+    );
+    return StudySubject.fromJson(json);
+  }
+
+  Future<void> deleteSubject(String id) async {
+    await _request('DELETE', '/subjects/$id');
+  }
+
   Future<StudyTask> createTask({
     required String subjectId,
     required String title,

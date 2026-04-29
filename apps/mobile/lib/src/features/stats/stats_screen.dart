@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
 
@@ -15,6 +16,8 @@ class StatsScreen extends StatelessWidget {
       1,
       (max, item) => item.minutes > max ? item.minutes : max,
     );
+    final subjectEntries = controller.stats.subjectMinutes.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
 
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -112,9 +115,62 @@ class StatsScreen extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '과목별 집중',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                if (subjectEntries.isEmpty)
+                  const Text(
+                    '과목별 기록이 아직 없습니다.',
+                    style: TextStyle(color: Colors.blueGrey),
+                  )
+                else
+                  ...subjectEntries.map((entry) {
+                    final subject = findSubjectByName(
+                      controller.subjects,
+                      entry.key,
+                    );
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 7,
+                            backgroundColor: parseColor(
+                              subject?.color ?? '#2563EB',
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(child: Text(entry.key)),
+                          Text(formatMinutes(entry.value)),
+                        ],
+                      ),
+                    );
+                  }),
+              ],
+            ),
+          ),
+        ),
       ],
     );
   }
+}
+
+StudySubject? findSubjectByName(List<StudySubject> subjects, String name) {
+  for (final subject in subjects) {
+    if (subject.name == name) return subject;
+  }
+  return null;
 }
 
 class _StatValue extends StatelessWidget {

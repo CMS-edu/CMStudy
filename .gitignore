@@ -1,0 +1,13 @@
+node_modules
+.env
+.dart_tool
+build
+dist
+.idea
+*.iml
+server/dist
+server/node_modules
+apps/mobile/.dart_tool
+apps/mobile/build
+apps/mobile/.idea
+apps/mobile/*.iml

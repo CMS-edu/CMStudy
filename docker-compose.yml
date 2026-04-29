@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: cmstudy-postgres
+    environment:
+      POSTGRES_USER: cmstudy
+      POSTGRES_PASSWORD: cmstudy
+      POSTGRES_DB: cmstudy
+    ports:
+      - "5432:5432"
+    volumes:
+      - cmstudy-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  cmstudy-postgres-data:

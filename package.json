@@ -1,0 +1,10 @@
+{
+  "name": "cmstudy",
+  "private": true,
+  "scripts": {
+    "server:dev": "npm --prefix server run start:dev",
+    "server:build": "npm --prefix server run build",
+    "server:migrate": "npm --prefix server run prisma:migrate",
+    "mobile:analyze": "flutter --suppress-analytics -d android analyze apps/mobile"
+  }
+}

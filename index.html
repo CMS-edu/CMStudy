@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StudyFlow</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="앱 메뉴">
+        <div class="brand">
+          <span class="brand-mark">S</span>
+          <div>
+            <strong>StudyFlow</strong>
+            <span>공부 관리</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="주요 화면">
+          <button class="nav-item active" data-view="dashboard" type="button">⌂ <span>대시보드</span></button>
+          <button class="nav-item" data-view="planner" type="button">☑ <span>계획</span></button>
+          <button class="nav-item" data-view="timer" type="button">◷ <span>집중</span></button>
+          <button class="nav-item" data-view="stats" type="button">▥ <span>통계</span></button>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow" id="todayLabel"></p>
+            <h1>오늘의 공부 흐름</h1>
+          </div>
+          <button class="ghost-button" id="resetDemo" type="button" title="샘플 데이터 복원">↻</button>
+        </header>
+
+        <section class="view active" id="dashboard">
+          <div class="metric-grid">
+            <article class="metric-card">
+              <span>오늘 완료</span>
+              <strong id="completedToday">0</strong>
+              <small>개 task</small>
+            </article>
+            <article class="metric-card">
+              <span>오늘 목표</span>
+              <strong id="goalToday">0h</strong>
+              <small>누적 계획</small>
+            </article>
+            <article class="metric-card">
+              <span>집중 시간</span>
+              <strong id="focusToday">0m</strong>
+              <small>오늘 기록</small>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="panel">
+              <div class="panel-title">
+                <h2>오늘 할 일</h2>
+                <span id="openCount">0개 남음</span>
+              </div>
+              <div class="task-list compact" id="todayTasks"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-title">
+                <h2>과목별 진행</h2>
+                <span>이번 주</span>
+              </div>
+              <div class="subject-list" id="subjectProgress"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="planner">
+          <form class="planner-form" id="taskForm">
+            <label>
+              과목
+              <select id="subjectInput"></select>
+            </label>
+            <label>
+              공부할 내용
+              <input id="titleInput" maxlength="80" placeholder="예: 미적분 문제집 3단원" required />
+            </label>
+            <label>
+              목표 시간
+              <input id="minutesInput" type="number" min="10" max="360" step="10" value="60" required />
+            </label>
+            <button class="primary-button" type="submit">＋ 추가</button>
+          </form>
+
+          <section class="panel full">
+            <div class="panel-title">
+              <h2>공부 계획</h2>
+              <div class="segmented" role="tablist" aria-label="필터">
+                <button class="segment active" data-filter="all" type="button">전체</button>
+                <button class="segment" data-filter="open" type="button">진행</button>
+                <button class="segment" data-filter="done" type="button">완료</button>
+              </div>
+            </div>
+            <div class="task-list" id="plannerTasks"></div>
+          </section>
+        </section>
+
+        <section class="view" id="timer">
+          <div class="timer-layout">
+            <section class="timer-panel">
+              <span class="timer-mode" id="timerMode">집중 세션</span>
+              <strong class="timer-readout" id="timerReadout">25:00</strong>
+              <div class="timer-controls">
+                <button class="primary-button" id="startTimer" type="button">▶ 시작</button>
+                <button class="ghost-button" id="pauseTimer" type="button">Ⅱ</button>
+                <button class="ghost-button" id="resetTimer" type="button">↻</button>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-title">
+                <h2>세션 설정</h2>
+                <span id="timerHint">25분 집중</span>
+              </div>
+              <label class="range-row">
+                집중 시간
+                <input id="focusLength" type="range" min="15" max="60" step="5" value="25" />
+                <strong id="focusLengthLabel">25분</strong>
+              </label>
+              <label class="range-row">
+                휴식 시간
+                <input id="breakLength" type="range" min="5" max="20" step="5" value="5" />
+                <strong id="breakLengthLabel">5분</strong>
+              </label>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="stats">
+          <section class="panel full">
+            <div class="panel-title">
+              <h2>7일 집중 기록</h2>
+              <span id="weeklyTotal">0분</span>
+            </div>
+            <div class="bar-chart" id="weeklyChart" aria-label="최근 7일 집중 시간"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <template id="taskTemplate">
+      <article class="task-item">
+        <button class="check-button" type="button" aria-label="완료 전환"></button>
+        <div class="task-main">
+          <strong></strong>
+          <span></span>
+        </div>
+        <time></time>
+        <button class="delete-button" type="button" aria-label="삭제">×</button>
+      </article>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>

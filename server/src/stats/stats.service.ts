@@ -28,7 +28,8 @@ export class StatsService {
     });
     const allSessions = await this.prisma.studySession.findMany({
       where: { userId },
-      select: { durationMinutes: true },
+      include: { subject: true },
+      orderBy: { startedAt: 'asc' },
     });
 
     const daily = new Map(dateKeys.map((date) => [date, 0]));
@@ -59,6 +60,9 @@ export class StatsService {
       date,
       minutes: daily.get(date) ?? 0,
     }));
+    const monthStart = startOfMonth(today);
+    const yearStart = startOfYear(today);
+    const tomorrow = addDays(today, 1);
 
     return {
       focusedToday: daily.get(today) ?? 0,
@@ -67,8 +71,95 @@ export class StatsService {
       daily: dailyList,
       subjectMinutes,
       todaySubjectMinutes,
+      periods: {
+        day: buildPeriodStats(
+          allSessions,
+          today,
+          tomorrow,
+          timezoneOffsetMinutes,
+        ),
+        week: buildPeriodStats(
+          allSessions,
+          dateKeys[0],
+          tomorrow,
+          timezoneOffsetMinutes,
+        ),
+        month: buildPeriodStats(
+          allSessions,
+          monthStart,
+          addMonths(monthStart, 1),
+          timezoneOffsetMinutes,
+        ),
+        year: buildPeriodStats(
+          allSessions,
+          yearStart,
+          addYears(yearStart, 1),
+          timezoneOffsetMinutes,
+        ),
+        total: buildPeriodStats(allSessions, null, null, timezoneOffsetMinutes),
+      },
     };
   }
+}
+
+type SessionWithSubject = {
+  startedAt: Date;
+  durationMinutes: number;
+  subject: { name: string } | null;
+};
+
+function buildPeriodStats(
+  sessions: SessionWithSubject[],
+  startKey: string | null,
+  endKey: string | null,
+  timezoneOffsetMinutes: number,
+) {
+  const subjectMinutes: Record<string, number> = {};
+  const daily = new Map<string, number>();
+  const monthly = new Map<string, number>();
+  let totalMinutes = 0;
+
+  for (const session of sessions) {
+    const key = toLocalDateKey(session.startedAt, timezoneOffsetMinutes);
+    if (startKey !== null && key < startKey) continue;
+    if (endKey !== null && key >= endKey) continue;
+
+    totalMinutes += session.durationMinutes;
+    daily.set(key, (daily.get(key) ?? 0) + session.durationMinutes);
+    const monthKey = key.slice(0, 7);
+    monthly.set(monthKey, (monthly.get(monthKey) ?? 0) + session.durationMinutes);
+    if (session.subject) {
+      subjectMinutes[session.subject.name] =
+        (subjectMinutes[session.subject.name] ?? 0) + session.durationMinutes;
+    }
+  }
+
+  const dailyList =
+    startKey === null || endKey === null
+      ? Array.from(daily.entries())
+          .sort(([first], [second]) => first.localeCompare(second))
+          .map(([date, minutes]) => ({ date, minutes }))
+      : dateRange(startKey, endKey).map((date) => ({
+          date,
+          minutes: daily.get(date) ?? 0,
+        }));
+  const activeDays = Array.from(daily.values()).filter((minutes) => minutes > 0)
+    .length;
+  const bestDayMinutes = Math.max(0, ...Array.from(daily.values()));
+
+  return {
+    totalMinutes,
+    subjectMinutes,
+    activeDays,
+    averageMinutes: activeDays === 0 ? 0 : Math.round(totalMinutes / activeDays),
+    bestDayMinutes,
+    daily: dailyList,
+    monthlyMinutes: Object.fromEntries(
+      Array.from(monthly.entries()).sort(([first], [second]) =>
+        first.localeCompare(second),
+      ),
+    ),
+  };
 }
 
 function lastDateKeys(days: number, anchorDate?: string) {
@@ -93,6 +184,36 @@ function localDateToUtc(date: string, timezoneOffsetMinutes: number) {
 function addDays(date: string, days: number) {
   const next = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
   next.setUTCDate(next.getUTCDate() + days);
+  return next.toISOString().slice(0, 10);
+}
+
+function dateRange(startKey: string, endKey: string) {
+  const dates: string[] = [];
+  let current = startKey;
+  while (current < endKey) {
+    dates.push(current);
+    current = addDays(current, 1);
+  }
+  return dates;
+}
+
+function startOfMonth(date: string) {
+  return `${date.slice(0, 7)}-01`;
+}
+
+function startOfYear(date: string) {
+  return `${date.slice(0, 4)}-01-01`;
+}
+
+function addMonths(date: string, months: number) {
+  const next = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
+  next.setUTCMonth(next.getUTCMonth() + months);
+  return next.toISOString().slice(0, 10);
+}
+
+function addYears(date: string, years: number) {
+  const next = new Date(`${date.slice(0, 10)}T00:00:00.000Z`);
+  next.setUTCFullYear(next.getUTCFullYear() + years);
   return next.toISOString().slice(0, 10);
 }
 

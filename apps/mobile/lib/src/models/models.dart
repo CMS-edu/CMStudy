@@ -100,6 +100,7 @@ class StudyStats {
     required this.daily,
     required this.subjectMinutes,
     required this.todaySubjectMinutes,
+    required this.periods,
   });
 
   final int focusedToday;
@@ -108,6 +109,7 @@ class StudyStats {
   final List<DailyFocus> daily;
   final Map<String, int> subjectMinutes;
   final Map<String, int> todaySubjectMinutes;
+  final Map<String, StudyPeriodStats> periods;
 
   factory StudyStats.fromJson(Map<String, dynamic> json) {
     final subjects = json['subjectMinutes'] as Map<String, dynamic>? ?? {};
@@ -126,6 +128,7 @@ class StudyStats {
       todaySubjectMinutes: todaySubjects.map(
         (key, value) => MapEntry(key, value as int? ?? 0),
       ),
+      periods: parsePeriods(json['periods'] as Map<String, dynamic>? ?? {}),
     );
   }
 
@@ -136,6 +139,64 @@ class StudyStats {
     daily: [],
     subjectMinutes: {},
     todaySubjectMinutes: {},
+    periods: {},
+  );
+}
+
+class StudyPeriodStats {
+  const StudyPeriodStats({
+    required this.totalMinutes,
+    required this.subjectMinutes,
+    required this.activeDays,
+    required this.averageMinutes,
+    required this.bestDayMinutes,
+    required this.daily,
+    required this.monthlyMinutes,
+  });
+
+  final int totalMinutes;
+  final Map<String, int> subjectMinutes;
+  final int activeDays;
+  final int averageMinutes;
+  final int bestDayMinutes;
+  final List<DailyFocus> daily;
+  final Map<String, int> monthlyMinutes;
+
+  factory StudyPeriodStats.fromJson(Map<String, dynamic> json) {
+    final subjects = json['subjectMinutes'] as Map<String, dynamic>? ?? {};
+    final monthly = json['monthlyMinutes'] as Map<String, dynamic>? ?? {};
+    return StudyPeriodStats(
+      totalMinutes: json['totalMinutes'] as int? ?? 0,
+      subjectMinutes: subjects.map(
+        (key, value) => MapEntry(key, value as int? ?? 0),
+      ),
+      activeDays: json['activeDays'] as int? ?? 0,
+      averageMinutes: json['averageMinutes'] as int? ?? 0,
+      bestDayMinutes: json['bestDayMinutes'] as int? ?? 0,
+      daily: (json['daily'] as List<dynamic>? ?? [])
+          .map((item) => DailyFocus.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      monthlyMinutes: monthly.map(
+        (key, value) => MapEntry(key, value as int? ?? 0),
+      ),
+    );
+  }
+
+  static const empty = StudyPeriodStats(
+    totalMinutes: 0,
+    subjectMinutes: {},
+    activeDays: 0,
+    averageMinutes: 0,
+    bestDayMinutes: 0,
+    daily: [],
+    monthlyMinutes: {},
+  );
+}
+
+Map<String, StudyPeriodStats> parsePeriods(Map<String, dynamic> json) {
+  return json.map(
+    (key, value) =>
+        MapEntry(key, StudyPeriodStats.fromJson(value as Map<String, dynamic>)),
   );
 }
 

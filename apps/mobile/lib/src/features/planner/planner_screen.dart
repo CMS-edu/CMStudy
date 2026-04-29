@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/assets.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
 
@@ -55,13 +56,19 @@ class PlannerScreen extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           if (controller.tasks.isEmpty)
-            const Card(
+            Card(
               child: Padding(
-                padding: EdgeInsets.all(22),
-                child: Text(
-                  '선택한 날짜에 계획이 없습니다.',
-                  style: TextStyle(color: Colors.blueGrey),
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.all(22),
+                child: Column(
+                  children: [
+                    Image.asset(AppAssets.emptyPlan, height: 150),
+                    const SizedBox(height: 12),
+                    const Text(
+                      '선택한 날짜에 계획이 없습니다.',
+                      style: TextStyle(color: Colors.blueGrey),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             )

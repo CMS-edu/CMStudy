@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/assets.dart';
 import '../../state/app_controller.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -37,7 +38,15 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.all(24),
               shrinkWrap: true,
               children: [
-                const SizedBox(height: 32),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    AppAssets.loginHero,
+                    height: 180,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 24),
                 Text(
                   'CMStudy',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -132,11 +141,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                Text(
-                  'Android 에뮬레이터는 기본 API 주소로 10.0.2.2:3000을 사용합니다.',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodySmall?.copyWith(color: Colors.blueGrey),
+                const Text(
+                  '계획, 집중, 통계를 하나의 흐름으로 관리하세요.',
+                  style: TextStyle(color: Colors.blueGrey),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),

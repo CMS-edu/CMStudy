@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/assets.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
 
@@ -47,6 +48,8 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 32),
             child: Column(
               children: [
+                Image.asset(AppAssets.focusTimer, height: 132),
+                const SizedBox(height: 10),
                 const Text('집중 세션', style: TextStyle(color: Colors.blueGrey)),
                 const SizedBox(height: 12),
                 Text(

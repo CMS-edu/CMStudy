@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/assets.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
@@ -64,53 +65,50 @@ class StatsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  height: 220,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: daily.isEmpty
-                        ? const [
-                            Expanded(
-                              child: Center(
-                                child: Text(
-                                  '아직 집중 기록이 없습니다.',
-                                  style: TextStyle(color: Colors.blueGrey),
-                                ),
-                              ),
-                            ),
-                          ]
-                        : daily.map((item) {
-                            final height =
-                                20 + (item.minutes / maxMinutes) * 160;
-                            return Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 4,
-                                ),
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Container(
-                                      height: height,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
-                                        borderRadius:
-                                            const BorderRadius.vertical(
-                                              top: Radius.circular(8),
-                                            ),
-                                      ),
+                if (daily.every((item) => item.minutes == 0))
+                  Column(
+                    children: [
+                      Image.asset(AppAssets.emptyStats, height: 160),
+                      const SizedBox(height: 10),
+                      const Text(
+                        '아직 집중 기록이 없습니다.',
+                        style: TextStyle(color: Colors.blueGrey),
+                      ),
+                    ],
+                  )
+                else
+                  SizedBox(
+                    height: 220,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: daily.map((item) {
+                        final height = 20 + (item.minutes / maxMinutes) * 160;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Container(
+                                  height: height,
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.primary,
+                                    borderRadius: const BorderRadius.vertical(
+                                      top: Radius.circular(8),
                                     ),
-                                    const SizedBox(height: 8),
-                                    Text(item.date.substring(5)),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            );
-                          }).toList(),
+                                const SizedBox(height: 8),
+                                Text(item.date.substring(5)),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
               ],
             ),
           ),

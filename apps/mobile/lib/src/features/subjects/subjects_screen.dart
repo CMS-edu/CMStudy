@@ -22,56 +22,69 @@ class SubjectsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final target = controller.subjects.fold<int>(
+      0,
+      (sum, subject) => sum + subject.targetMinutesPerDay,
+    );
     return Scaffold(
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 88),
         children: [
           Text(
             '과목 관리',
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           const Text(
-            '과목별 색상과 하루 목표 시간을 정해두면 계획과 통계가 보기 쉬워져요.',
+            '과목별 목표와 색상을 정하면 추천과 통계가 더 정확해집니다.',
             style: TextStyle(color: Colors.blueGrey),
           ),
           const SizedBox(height: 16),
-          ...controller.subjects.map(
-            (subject) => Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Card(
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: parseColor(subject.color),
-                    child: Text(
-                      subject.name.characters.first,
-                      style: const TextStyle(color: Colors.white),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  const Icon(Icons.track_changes_outlined),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '하루 전체 목표',
+                          style: TextStyle(color: Colors.blueGrey),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          formatMinutes(target),
+                          style: Theme.of(context).textTheme.titleLarge
+                              ?.copyWith(fontWeight: FontWeight.w900),
+                        ),
+                      ],
                     ),
                   ),
-                  title: Text(subject.name),
-                  subtitle: Text(
-                    '하루 목표 ${formatMinutes(subject.targetMinutesPerDay)}',
-                  ),
-                  trailing: PopupMenuButton<String>(
-                    onSelected: (value) async {
-                      if (value == 'edit') {
-                        await showSubjectSheet(context, controller, subject);
-                      }
-                      if (value == 'delete' && context.mounted) {
-                        await confirmDelete(context, controller, subject);
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(value: 'edit', child: Text('수정')),
-                      PopupMenuItem(value: 'delete', child: Text('삭제')),
-                    ],
-                  ),
-                ),
+                  Text('${controller.subjects.length}개'),
+                ],
               ),
             ),
           ),
+          const SizedBox(height: 14),
+          if (controller.subjects.isEmpty)
+            const _EmptySubjects()
+          else
+            ...controller.subjects.map(
+              (subject) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _SubjectTile(
+                  subject: subject,
+                  onEdit: () => showSubjectSheet(context, controller, subject),
+                  onDelete: () => confirmDelete(context, controller, subject),
+                ),
+              ),
+            ),
           if (controller.errorMessage != null)
             Padding(
               padding: const EdgeInsets.only(top: 8),
@@ -91,6 +104,60 @@ class SubjectsScreen extends StatelessWidget {
   }
 }
 
+class _SubjectTile extends StatelessWidget {
+  const _SubjectTile({
+    required this.subject,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final StudySubject subject;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = parseColor(subject.color);
+    return Card(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: color,
+          child: Text(
+            subject.name.characters.first,
+            style: const TextStyle(color: Colors.white),
+          ),
+        ),
+        title: Text(subject.name),
+        subtitle: Text('하루 목표 ${formatMinutes(subject.targetMinutesPerDay)}'),
+        trailing: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'edit') onEdit();
+            if (value == 'delete') onDelete();
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(value: 'edit', child: Text('수정')),
+            PopupMenuItem(value: 'delete', child: Text('삭제')),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptySubjects extends StatelessWidget {
+  const _EmptySubjects();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Card(
+      child: Padding(
+        padding: EdgeInsets.all(18),
+        child: Text('아직 과목이 없습니다. 오른쪽 아래 버튼으로 첫 과목을 추가하세요.'),
+      ),
+    );
+  }
+}
+
 Future<void> confirmDelete(
   BuildContext context,
   AppController controller,
@@ -100,7 +167,7 @@ Future<void> confirmDelete(
     context: context,
     builder: (context) => AlertDialog(
       title: Text('${subject.name} 삭제'),
-      content: const Text('연결된 계획도 함께 삭제될 수 있습니다. 계속할까요?'),
+      content: const Text('연결된 계획은 함께 삭제될 수 있습니다. 계속할까요?'),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
@@ -149,19 +216,16 @@ Future<void> showSubjectSheet(
                   subject == null ? '과목 추가' : '과목 수정',
                   style: Theme.of(
                     context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: '과목명',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: const InputDecoration(labelText: '과목명'),
                   autofocus: true,
                 ),
                 const SizedBox(height: 16),
-                const Text('색상', style: TextStyle(fontWeight: FontWeight.w700)),
+                const Text('색상', style: TextStyle(fontWeight: FontWeight.w900)),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 10,
@@ -178,7 +242,12 @@ Future<void> showSubjectSheet(
                           color: parseColor(item),
                           shape: BoxShape.circle,
                           border: selected
-                              ? Border.all(color: Colors.black, width: 3)
+                              ? Border.all(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurface,
+                                  width: 3,
+                                )
                               : null,
                         ),
                         child: selected
@@ -232,5 +301,5 @@ Future<void> showSubjectSheet(
         },
       );
     },
-  );
+  ).whenComplete(nameController.dispose);
 }

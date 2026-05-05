@@ -16,9 +16,9 @@ const periodLabels = {
 };
 
 const periodSubtitles = {
-  'day': '오늘의 과목별 집중 비율',
-  'week': '이번 주 공부 리듬',
-  'month': '이번 달 누적과 빈도',
+  'day': '오늘의 집중 분포',
+  'week': '이번 주 리듬',
+  'month': '이번 달 누적과 밀도',
   'year': '올해 월별 성장',
   'total': '전체 누적 기록',
 };
@@ -40,21 +40,18 @@ class _StatsScreenState extends State<StatsScreen> {
     final stats = widget.controller.stats;
     final current = stats.periods[period] ?? StudyPeriodStats.empty;
     final entries = sortedSubjectEntries(current.subjectMinutes);
-    final total = current.totalMinutes;
     final target = periodTarget(widget.controller.subjects, period);
-    final targetRate = target == 0 ? 0 : ((total / target) * 100).round();
-    final topSubject = entries.isEmpty ? '-' : entries.first.key;
-    final studiedSubjectCount = entries
-        .where((entry) => entry.value > 0)
-        .length;
+    final targetRate = target == 0
+        ? 0
+        : ((current.totalMinutes / target) * 100).round();
 
     return RefreshIndicator(
       onRefresh: widget.controller.loadDashboard,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
         children: [
           Text(
-            '공부 통계',
+            '공부 분석',
             style: Theme.of(
               context,
             ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w900),
@@ -70,32 +67,30 @@ class _StatsScreenState extends State<StatsScreen> {
             onSelected: (value) => setState(() => period = value),
           ),
           const SizedBox(height: 16),
-          _PeriodSummaryCard(
+          _AnalysisOverview(
             label: periodLabels[period] ?? '',
-            totalMinutes: total,
+            stats: current,
             targetRate: targetRate,
-            activeDays: current.activeDays,
-            averageMinutes: current.averageMinutes,
-            bestDayMinutes: current.bestDayMinutes,
-            studiedSubjectCount: studiedSubjectCount,
-            topSubject: topSubject,
+            target: target,
+            subjectCount: entries.length,
           ),
           const SizedBox(height: 16),
           _SubjectRatioCard(
             controller: widget.controller,
             entries: entries,
-            totalMinutes: total,
+            totalMinutes: current.totalMinutes,
           ),
           const SizedBox(height: 16),
           _FlowCard(period: period, stats: current),
-          const SizedBox(height: 16),
-          _InsightCard(
-            controller: widget.controller,
-            period: period,
-            stats: current,
-            entries: entries,
-            target: target,
-          ),
+          if (widget.controller.denseStats) ...[
+            const SizedBox(height: 16),
+            _CoachBreakdownCard(
+              period: period,
+              stats: current,
+              entries: entries,
+              target: target,
+            ),
+          ],
         ],
       ),
     );
@@ -128,7 +123,6 @@ class _PeriodSelector extends StatelessWidget {
               ),
               selectedColor: colorScheme.primary,
               showCheckmark: false,
-              side: BorderSide(color: colorScheme.outlineVariant),
             ),
           );
         }).toList(),
@@ -137,26 +131,20 @@ class _PeriodSelector extends StatelessWidget {
   }
 }
 
-class _PeriodSummaryCard extends StatelessWidget {
-  const _PeriodSummaryCard({
+class _AnalysisOverview extends StatelessWidget {
+  const _AnalysisOverview({
     required this.label,
-    required this.totalMinutes,
+    required this.stats,
     required this.targetRate,
-    required this.activeDays,
-    required this.averageMinutes,
-    required this.bestDayMinutes,
-    required this.studiedSubjectCount,
-    required this.topSubject,
+    required this.target,
+    required this.subjectCount,
   });
 
   final String label;
-  final int totalMinutes;
+  final StudyPeriodStats stats;
   final int targetRate;
-  final int activeDays;
-  final int averageMinutes;
-  final int bestDayMinutes;
-  final int studiedSubjectCount;
-  final String topSubject;
+  final int target;
+  final int subjectCount;
 
   @override
   Widget build(BuildContext context) {
@@ -178,7 +166,7 @@ class _PeriodSummaryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        formatMinutes(totalMinutes),
+                        formatMinutes(stats.totalMinutes),
                         style: Theme.of(context).textTheme.displaySmall
                             ?.copyWith(
                               fontWeight: FontWeight.w900,
@@ -196,12 +184,20 @@ class _PeriodSummaryCard extends StatelessWidget {
               spacing: 10,
               runSpacing: 10,
               children: [
-                _MiniStat(label: '목표 달성', value: '$targetRate%'),
-                _MiniStat(label: '공부한 날', value: '$activeDays일'),
-                _MiniStat(label: '하루 평균', value: formatMinutes(averageMinutes)),
-                _MiniStat(label: '최고 기록', value: formatMinutes(bestDayMinutes)),
-                _MiniStat(label: '공부 과목', value: '$studiedSubjectCount개'),
-                _MiniStat(label: '최다 과목', value: topSubject),
+                _MiniStat(
+                  label: '목표 달성',
+                  value: target == 0 ? '-' : '$targetRate%',
+                ),
+                _MiniStat(label: '공부한 날', value: '${stats.activeDays}일'),
+                _MiniStat(
+                  label: '하루 평균',
+                  value: formatMinutes(stats.averageMinutes),
+                ),
+                _MiniStat(
+                  label: '최고 기록',
+                  value: formatMinutes(stats.bestDayMinutes),
+                ),
+                _MiniStat(label: '공부 과목', value: '${subjectCount}개'),
               ],
             ),
           ],
@@ -220,8 +216,8 @@ class _GoalRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final progress = (value / 100).clamp(0.0, 1.0);
     return SizedBox(
-      width: 86,
-      height: 86,
+      width: 84,
+      height: 84,
       child: Stack(
         alignment: Alignment.center,
         children: [
@@ -277,7 +273,7 @@ class _SubjectRatioCard extends StatelessWidget {
               Column(
                 children: [
                   SizedBox(
-                    height: 230,
+                    height: 228,
                     child: CustomPaint(
                       painter: SubjectPiePainter(
                         entries: entries,
@@ -401,7 +397,7 @@ class _SubjectRatioRow extends StatelessWidget {
         Row(
           children: [
             SizedBox(
-              width: 30,
+              width: 34,
               child: Text(
                 '$rank위',
                 style: const TextStyle(
@@ -415,7 +411,7 @@ class _SubjectRatioRow extends StatelessWidget {
             Expanded(
               child: Text(
                 name,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(fontWeight: FontWeight.w900),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -449,7 +445,6 @@ class _FlowCard extends StatelessWidget {
     final monthlyEntries = stats.monthlyMinutes.entries.toList()
       ..sort((a, b) => a.key.compareTo(b.key));
     final dailyEntries = stats.daily;
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 18, 16, 14),
@@ -513,7 +508,6 @@ class _BarChart extends StatelessWidget {
     if (items.isEmpty) {
       return const _SmallEmpty(text: '아직 표시할 흐름이 없습니다.');
     }
-
     final trimmed = items.length > 18
         ? items.sublist(items.length - 18)
         : items;
@@ -521,7 +515,6 @@ class _BarChart extends StatelessWidget {
       1,
       (max, item) => item.minutes > max ? item.minutes : max,
     );
-
     return SizedBox(
       height: 196,
       child: Row(
@@ -582,7 +575,6 @@ class _HeatGrid extends StatelessWidget {
       (max, item) => item.minutes > max ? item.minutes : max,
     );
     final color = Theme.of(context).colorScheme.primary;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -627,16 +619,14 @@ class _HeatGrid extends StatelessWidget {
   }
 }
 
-class _InsightCard extends StatelessWidget {
-  const _InsightCard({
-    required this.controller,
+class _CoachBreakdownCard extends StatelessWidget {
+  const _CoachBreakdownCard({
     required this.period,
     required this.stats,
     required this.entries,
     required this.target,
   });
 
-  final AppController controller;
   final String period;
   final StudyPeriodStats stats;
   final List<MapEntry<String, int>> entries;
@@ -651,7 +641,6 @@ class _InsightCard extends StatelessWidget {
         ? 0
         : ((entries.first.value / stats.totalMinutes) * 100).round();
     final projected = projectedMinutes(period, stats);
-
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -659,7 +648,7 @@ class _InsightCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '분석 메모',
+              '코치 분석',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
@@ -672,7 +661,7 @@ class _InsightCard extends StatelessWidget {
             ),
             _InsightRow(
               icon: Icons.event_available_outlined,
-              title: '꾸준함',
+              title: '공부 빈도',
               value: '$consistency%',
             ),
             _InsightRow(
@@ -738,7 +727,7 @@ class _MiniStat extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -766,7 +755,7 @@ class _EmptyStats extends StatelessWidget {
     return Column(
       children: [
         if (controller.showImages) ...[
-          Image.asset(AppAssets.emptyStats, height: 160),
+          Image.asset(AppAssets.emptyStats, height: 150),
           const SizedBox(height: 10),
         ],
         const Text(

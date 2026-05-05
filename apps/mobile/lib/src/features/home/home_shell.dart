@@ -58,7 +58,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
             selectedIcon: Icon(Icons.dashboard),
-            label: '홈',
+            label: '작전판',
           ),
           NavigationDestination(
             icon: Icon(Icons.timer_outlined),
@@ -66,9 +66,9 @@ class _HomeShellState extends State<HomeShell> {
             label: '기록',
           ),
           NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart),
-            label: '통계',
+            icon: Icon(Icons.analytics_outlined),
+            selectedIcon: Icon(Icons.analytics),
+            label: '분석',
           ),
           NavigationDestination(
             icon: Icon(Icons.palette_outlined),

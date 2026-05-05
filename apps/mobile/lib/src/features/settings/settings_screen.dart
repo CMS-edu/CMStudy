@@ -1,17 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_theme.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
-
-const accentChoices = [
-  Color(0xFF2563EB),
-  Color(0xFF059669),
-  Color(0xFF7C3AED),
-  Color(0xFFEA580C),
-  Color(0xFFDC2626),
-  Color(0xFF0891B2),
-  Color(0xFF475569),
-];
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.controller});
@@ -23,13 +14,12 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
         children: [
           _SectionCard(
-            title: '화면',
+            title: '화면 모드',
+            subtitle: '앱 전체의 밝기와 기본 분위기를 정합니다.',
             children: [
-              const Text('테마', style: TextStyle(fontWeight: FontWeight.w800)),
-              const SizedBox(height: 8),
               SegmentedButton<ThemeMode>(
                 segments: const [
                   ButtonSegment(
@@ -53,65 +43,48 @@ class SettingsScreen extends StatelessWidget {
                   controller.setThemeMode(value.first);
                 },
               ),
-              const SizedBox(height: 18),
-              const Text(
-                '포인트 색상',
-                style: TextStyle(fontWeight: FontWeight.w800),
-              ),
-              const SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: accentChoices.map((color) {
-                  final selected =
-                      color.toARGB32() == controller.accentColorValue;
-                  return InkWell(
-                    onTap: () => controller.setAccentColor(color),
-                    customBorder: const CircleBorder(),
-                    child: Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        border: selected
-                            ? Border.all(
-                                color: Theme.of(context).colorScheme.onSurface,
-                                width: 3,
-                              )
-                            : null,
-                      ),
-                      child: selected
-                          ? const Icon(Icons.check, color: Colors.white)
-                          : null,
-                    ),
-                  );
-                }).toList(),
+            ],
+          ),
+          const SizedBox(height: 12),
+          _SectionCard(
+            title: '테마 프리셋',
+            subtitle: '색상, 표면 톤, 강조색을 한 번에 바꿉니다.',
+            children: [
+              ...cmThemeProfiles.map(
+                (profile) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: _ThemePresetTile(
+                    profile: profile,
+                    selected: controller.themePreset == profile.preset,
+                    onTap: () => controller.setThemePreset(profile.preset),
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: 12),
           _SectionCard(
             title: '기록 화면',
+            subtitle: '홈과 분석 화면에 표시할 정보량을 조절합니다.',
             children: [
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('이미지 표시'),
-                subtitle: const Text('로그인, 빈 화면, 스탑워치 일러스트를 보여줍니다.'),
+                subtitle: const Text('로그인, 빈 화면, 스탑워치 일러스트를 표시합니다.'),
                 value: controller.showImages,
                 onChanged: controller.setShowImages,
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('홈에서 계획도 보기'),
-                subtitle: const Text('기본은 공부량 중심이고, 필요할 때만 계획을 표시합니다.'),
+                title: const Text('작전판에 계획 표시'),
+                subtitle: const Text('계획 기능을 쓰는 경우 홈 하단에 오늘 계획을 보여줍니다.'),
                 value: controller.showPlansOnHome,
                 onChanged: controller.setShowPlansOnHome,
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('통계 촘촘하게 보기'),
-                subtitle: const Text('요약 카드와 세부 지표를 더 많이 표시합니다.'),
+                title: const Text('분석 정보 촘촘히 보기'),
+                subtitle: const Text('통계 화면에서 보조 지표와 분석 메모를 더 자세히 표시합니다.'),
                 value: controller.denseStats,
                 onChanged: controller.setDenseStats,
               ),
@@ -120,6 +93,7 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 12),
           _SectionCard(
             title: '공부 기준',
+            subtitle: '과목 목표를 바탕으로 추천과 밸런스 점수가 계산됩니다.',
             children: [
               _InfoRow(
                 label: '오늘 목표',
@@ -131,7 +105,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              const _InfoRow(label: '스탑워치 저장', value: '1분 단위 올림'),
+              const _InfoRow(label: '세션 저장', value: '1분 단위 반올림'),
               const SizedBox(height: 10),
               const _InfoRow(label: '동기화', value: 'Render 서버 자동 저장'),
             ],
@@ -159,10 +133,109 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
+class _ThemePresetTile extends StatelessWidget {
+  const _ThemePresetTile({
+    required this.profile,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final CmThemeProfile profile;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outlineVariant,
+            width: selected ? 1.6 : 1,
+          ),
+        ),
+        child: Row(
+          children: [
+            _ThemeSwatch(profile: profile),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.label,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    profile.description,
+                    style: const TextStyle(color: Colors.blueGrey),
+                  ),
+                ],
+              ),
+            ),
+            if (selected) const Icon(Icons.check_circle),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeSwatch extends StatelessWidget {
+  const _ThemeSwatch({required this.profile});
+
+  final CmThemeProfile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 54,
+      height: 34,
+      child: Row(
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: profile.seedColor,
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(7),
+                ),
+              ),
+            ),
+          ),
+          Expanded(child: Container(color: profile.lightBackground)),
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: profile.darkSurface,
+                borderRadius: const BorderRadius.horizontal(
+                  right: Radius.circular(7),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.children});
+  const _SectionCard({
+    required this.title,
+    required this.children,
+    this.subtitle,
+  });
 
   final String title;
+  final String? subtitle;
   final List<Widget> children;
 
   @override
@@ -179,6 +252,10 @@ class _SectionCard extends StatelessWidget {
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
             ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 4),
+              Text(subtitle!, style: const TextStyle(color: Colors.blueGrey)),
+            ],
             const SizedBox(height: 14),
             ...children,
           ],
@@ -201,7 +278,7 @@ class _InfoRow extends StatelessWidget {
         Expanded(
           child: Text(label, style: const TextStyle(color: Colors.blueGrey)),
         ),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
       ],
     );
   }

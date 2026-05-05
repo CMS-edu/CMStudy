@@ -1,5 +1,8 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../core/assets.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 
@@ -10,58 +13,34 @@ class DashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final snapshot = StudyCoachSnapshot.from(controller);
     return RefreshIndicator(
       onRefresh: controller.loadDashboard,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
         children: [
-          Text(
-            '${controller.user?.nickname ?? ''}님의 공부',
-            style: Theme.of(
-              context,
-            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            '과목별 스탑워치로 오늘 공부량을 쌓아가세요.',
-            style: TextStyle(color: Colors.blueGrey),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _MetricCard(
-                  label: '오늘 누적',
-                  value: formatMinutes(controller.stats.focusedToday),
-                  icon: Icons.timer_outlined,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MetricCard(
-                  label: '이번 주',
-                  value: formatMinutes(controller.stats.weeklyTotal),
-                  icon: Icons.calendar_view_week_outlined,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _MetricCard(
-            label: '전체 누적',
-            value: formatMinutes(controller.stats.totalMinutes),
-            icon: Icons.all_inclusive,
-          ),
+          _CommandHero(controller: controller, snapshot: snapshot),
+          const SizedBox(height: 14),
+          _MetricStrip(snapshot: snapshot),
           const SizedBox(height: 18),
-          const _SectionTitle(title: '오늘 과목별 공부량'),
+          _RecommendationPanel(snapshot: snapshot),
+          const SizedBox(height: 18),
+          _SectionHeader(
+            title: '과목 작전',
+            trailing: '${controller.subjects.length}개 과목',
+          ),
           const SizedBox(height: 10),
           if (controller.subjects.isEmpty)
-            const _EmptyCard(text: '과목 탭에서 과목을 추가하세요.')
+            const _EmptyPanel(
+              icon: Icons.auto_stories_outlined,
+              title: '과목을 먼저 추가하세요',
+              message: '과목별 목표를 정하면 추천 순서와 밸런스 분석이 살아납니다.',
+            )
           else
             ...controller.subjects.map(
               (subject) => Padding(
                 padding: const EdgeInsets.only(bottom: 8),
-                child: _SubjectProgressTile(
+                child: _SubjectPlanRow(
                   subject: subject,
                   minutes:
                       controller.stats.todaySubjectMinutes[subject.name] ?? 0,
@@ -70,26 +49,29 @@ class DashboardScreen extends StatelessWidget {
             ),
           if (controller.showPlansOnHome) ...[
             const SizedBox(height: 18),
-            _SectionTitle(
-              title: '오늘 할 일',
-              trailing: '${controller.tasks.length}개',
+            _SectionHeader(
+              title: '오늘 계획',
+              trailing: '${controller.openTaskCount}개 남음',
             ),
             const SizedBox(height: 10),
             if (controller.tasks.isEmpty)
-              const _EmptyCard(text: '오늘 계획이 아직 없습니다.')
+              const _EmptyPanel(
+                icon: Icons.checklist_outlined,
+                title: '오늘 계획이 없습니다',
+                message: '계획을 쓰지 않아도 스탑워치 기록만으로 충분히 분석됩니다.',
+              )
             else
               ...controller.tasks
                   .take(5)
                   .map(
                     (task) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
-                      child: _TaskTile(
+                      child: _TaskRow(
                         task: task,
                         onToggle: () => controller.toggleTask(task.id),
                       ),
                     ),
                   ),
-            const SizedBox(height: 18),
           ],
         ],
       ),
@@ -97,8 +79,305 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class _SubjectProgressTile extends StatelessWidget {
-  const _SubjectProgressTile({required this.subject, required this.minutes});
+class StudyCoachSnapshot {
+  const StudyCoachSnapshot({
+    required this.todayMinutes,
+    required this.weekMinutes,
+    required this.totalMinutes,
+    required this.dailyTarget,
+    required this.targetRate,
+    required this.balanceScore,
+    required this.grade,
+    required this.recommendedSubject,
+    required this.recommendedReason,
+  });
+
+  final int todayMinutes;
+  final int weekMinutes;
+  final int totalMinutes;
+  final int dailyTarget;
+  final int targetRate;
+  final int balanceScore;
+  final String grade;
+  final StudySubject? recommendedSubject;
+  final String recommendedReason;
+
+  factory StudyCoachSnapshot.from(AppController controller) {
+    final dailyTarget = controller.subjects.fold<int>(
+      0,
+      (sum, subject) => sum + subject.targetMinutesPerDay,
+    );
+    final today = controller.stats.focusedToday;
+    final targetRate = dailyTarget == 0
+        ? 0
+        : ((today / dailyTarget) * 100).round();
+    final balance = calculateBalanceScore(
+      controller.subjects,
+      controller.stats.todaySubjectMinutes,
+    );
+    final recommended = recommendSubject(
+      controller.subjects,
+      controller.stats.todaySubjectMinutes,
+    );
+    return StudyCoachSnapshot(
+      todayMinutes: today,
+      weekMinutes: controller.stats.weeklyTotal,
+      totalMinutes: controller.stats.totalMinutes,
+      dailyTarget: dailyTarget,
+      targetRate: targetRate,
+      balanceScore: balance,
+      grade: coachGrade(targetRate, balance),
+      recommendedSubject: recommended,
+      recommendedReason: recommendationReason(
+        recommended,
+        controller.stats.todaySubjectMinutes,
+      ),
+    );
+  }
+}
+
+class _CommandHero extends StatelessWidget {
+  const _CommandHero({required this.controller, required this.snapshot});
+
+  final AppController controller;
+  final StudyCoachSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final progress = (snapshot.targetRate / 100).clamp(0.0, 1.0);
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: scheme.primaryContainer.withAlpha(150),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: scheme.primary.withAlpha(42)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${controller.user?.nickname ?? '사용자'}님의 오늘 작전',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  snapshot.dailyTarget == 0
+                      ? '과목 목표를 설정하면 오늘의 추천 루틴이 만들어집니다.'
+                      : '목표 ${formatMinutes(snapshot.dailyTarget)} 중 ${formatMinutes(snapshot.todayMinutes)} 진행',
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 9,
+                    backgroundColor: scheme.surface.withAlpha(150),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          if (controller.showImages)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.asset(
+                AppAssets.focusTimer,
+                width: 84,
+                height: 84,
+                fit: BoxFit.cover,
+              ),
+            )
+          else
+            _GradeBadge(grade: snapshot.grade),
+        ],
+      ),
+    );
+  }
+}
+
+class _GradeBadge extends StatelessWidget {
+  const _GradeBadge({required this.grade});
+
+  final String grade;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 76,
+      height: 76,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      child: Text(
+        grade,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 28,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricStrip extends StatelessWidget {
+  const _MetricStrip({required this.snapshot});
+
+  final StudyCoachSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      crossAxisCount: 2,
+      childAspectRatio: 1.75,
+      mainAxisSpacing: 10,
+      crossAxisSpacing: 10,
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      children: [
+        _MetricTile(
+          label: '오늘 누적',
+          value: formatMinutes(snapshot.todayMinutes),
+          icon: Icons.timer_outlined,
+        ),
+        _MetricTile(
+          label: '이번 주',
+          value: formatMinutes(snapshot.weekMinutes),
+          icon: Icons.calendar_view_week_outlined,
+        ),
+        _MetricTile(
+          label: '밸런스',
+          value: '${snapshot.balanceScore}점',
+          icon: Icons.balance_outlined,
+        ),
+        _MetricTile(
+          label: '전체 누적',
+          value: formatMinutes(snapshot.totalMinutes),
+          icon: Icons.all_inclusive,
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricTile extends StatelessWidget {
+  const _MetricTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: const TextStyle(color: Colors.blueGrey)),
+                  const SizedBox(height: 4),
+                  Text(
+                    value,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _RecommendationPanel extends StatelessWidget {
+  const _RecommendationPanel({required this.snapshot});
+
+  final StudyCoachSnapshot snapshot;
+
+  @override
+  Widget build(BuildContext context) {
+    final subject = snapshot.recommendedSubject;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          children: [
+            Icon(
+              Icons.psychology_alt_outlined,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    '다음 추천',
+                    style: TextStyle(
+                      color: Colors.blueGrey,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subject == null ? '과목 목표를 먼저 설정하세요' : subject.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    snapshot.recommendedReason,
+                    style: const TextStyle(color: Colors.blueGrey),
+                  ),
+                ],
+              ),
+            ),
+            if (subject != null)
+              CircleAvatar(
+                backgroundColor: parseColor(subject.color),
+                child: Text(
+                  subject.name.characters.first,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SubjectPlanRow extends StatelessWidget {
+  const _SubjectPlanRow({required this.subject, required this.minutes});
 
   final StudySubject subject;
   final int minutes;
@@ -106,9 +385,9 @@ class _SubjectProgressTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = parseColor(subject.color);
-    final progress = subject.targetMinutesPerDay == 0
-        ? 0.0
-        : (minutes / subject.targetMinutesPerDay).clamp(0.0, 1.0);
+    final target = subject.targetMinutesPerDay;
+    final progress = target == 0 ? 0.0 : (minutes / target).clamp(0.0, 1.0);
+    final status = subjectStatus(minutes, target);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -130,11 +409,11 @@ class _SubjectProgressTile extends StatelessWidget {
                     children: [
                       Text(
                         subject.name,
-                        style: const TextStyle(fontWeight: FontWeight.w800),
+                        style: const TextStyle(fontWeight: FontWeight.w900),
                       ),
                       Text(
-                        '목표 ${formatMinutes(subject.targetMinutesPerDay)}',
-                        style: const TextStyle(color: Colors.blueGrey),
+                        '목표 ${formatMinutes(target)} · ${status.label}',
+                        style: TextStyle(color: status.color),
                       ),
                     ],
                   ),
@@ -164,44 +443,8 @@ class _SubjectProgressTile extends StatelessWidget {
   }
 }
 
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary),
-            const SizedBox(height: 16),
-            Text(label, style: const TextStyle(color: Colors.blueGrey)),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: Theme.of(
-                context,
-              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TaskTile extends StatelessWidget {
-  const _TaskTile({required this.task, required this.onToggle});
+class _TaskRow extends StatelessWidget {
+  const _TaskRow({required this.task, required this.onToggle});
 
   final StudyTask task;
   final VoidCallback onToggle;
@@ -225,8 +468,8 @@ class _TaskTile extends StatelessWidget {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle({required this.title, this.trailing});
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.title, this.trailing});
 
   final String title;
   final String? trailing;
@@ -240,7 +483,7 @@ class _SectionTitle extends StatelessWidget {
           title,
           style: Theme.of(
             context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
         ),
         if (trailing != null)
           Text(trailing!, style: const TextStyle(color: Colors.blueGrey)),
@@ -249,29 +492,126 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-class _EmptyCard extends StatelessWidget {
-  const _EmptyCard({required this.text});
+class _EmptyPanel extends StatelessWidget {
+  const _EmptyPanel({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
 
-  final String text;
+  final IconData icon;
+  final String title;
+  final String message;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: Text(text, style: const TextStyle(color: Colors.blueGrey)),
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(message, style: const TextStyle(color: Colors.blueGrey)),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
+class SubjectStatus {
+  const SubjectStatus(this.label, this.color);
+
+  final String label;
+  final Color color;
+}
+
+SubjectStatus subjectStatus(int minutes, int target) {
+  if (target <= 0) return const SubjectStatus('목표 없음', Colors.blueGrey);
+  final ratio = minutes / target;
+  if (ratio >= 1.25) return const SubjectStatus('초과 진행', Color(0xFF7C3AED));
+  if (ratio >= 1) return const SubjectStatus('완료', Color(0xFF059669));
+  if (ratio >= 0.65) return const SubjectStatus('순항', Color(0xFF2563EB));
+  if (ratio > 0) return const SubjectStatus('보강 필요', Color(0xFFEA580C));
+  return const SubjectStatus('미시작', Color(0xFF64748B));
+}
+
+StudySubject? recommendSubject(
+  List<StudySubject> subjects,
+  Map<String, int> todayMinutes,
+) {
+  if (subjects.isEmpty) return null;
+  final sorted = [...subjects];
+  sorted.sort((a, b) {
+    final aGap = a.targetMinutesPerDay - (todayMinutes[a.name] ?? 0);
+    final bGap = b.targetMinutesPerDay - (todayMinutes[b.name] ?? 0);
+    return bGap.compareTo(aGap);
+  });
+  return sorted.first;
+}
+
+String recommendationReason(
+  StudySubject? subject,
+  Map<String, int> todayMinutes,
+) {
+  if (subject == null) return '과목 탭에서 하루 목표를 만들면 자동 추천이 시작됩니다.';
+  final current = todayMinutes[subject.name] ?? 0;
+  final gap = math.max(0, subject.targetMinutesPerDay - current);
+  if (gap == 0) return '오늘 목표는 채웠습니다. 짧은 복습 세션으로 마무리해도 좋습니다.';
+  return '목표까지 ${formatMinutes(gap)} 남았습니다. 기록 탭에서 바로 시작하세요.';
+}
+
+int calculateBalanceScore(
+  List<StudySubject> subjects,
+  Map<String, int> todayMinutes,
+) {
+  if (subjects.isEmpty) return 0;
+  final totalTarget = subjects.fold<int>(
+    0,
+    (sum, subject) => sum + subject.targetMinutesPerDay,
+  );
+  final totalActual = subjects.fold<int>(
+    0,
+    (sum, subject) => sum + (todayMinutes[subject.name] ?? 0),
+  );
+  if (totalTarget == 0 || totalActual == 0) return 0;
+
+  var drift = 0.0;
+  for (final subject in subjects) {
+    final targetShare = subject.targetMinutesPerDay / totalTarget;
+    final actualShare = (todayMinutes[subject.name] ?? 0) / totalActual;
+    drift += (targetShare - actualShare).abs();
+  }
+  return (100 - drift * 50).clamp(0, 100).round();
+}
+
+String coachGrade(int targetRate, int balanceScore) {
+  final blended = (targetRate.clamp(0, 120) * 0.6) + (balanceScore * 0.4);
+  if (blended >= 95) return 'S';
+  if (blended >= 80) return 'A';
+  if (blended >= 60) return 'B';
+  if (blended >= 35) return 'C';
+  return 'D';
+}
+
 String formatMinutes(int minutes) {
-  if (minutes < 60) return '$minutes분';
+  if (minutes < 60) return '${minutes}분';
   final hours = minutes ~/ 60;
   final rest = minutes % 60;
-  return rest == 0 ? '$hours시간' : '$hours시간 $rest분';
+  return rest == 0 ? '${hours}시간' : '${hours}시간 ${rest}분';
 }
 
 Color parseColor(String hex) {

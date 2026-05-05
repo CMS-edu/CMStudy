@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -144,6 +145,7 @@ class ApiClient {
     required DateTime endedAt,
     required int durationMinutes,
     String? subjectId,
+    String? note,
   }) async {
     await _request(
       'POST',
@@ -153,6 +155,7 @@ class ApiClient {
         'endedAt': endedAt.toUtc().toIso8601String(),
         'durationMinutes': durationMinutes,
         if (subjectId != null) 'subjectId': subjectId,
+        if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
       },
     );
   }
@@ -166,7 +169,9 @@ class ApiClient {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
     final client = HttpClient();
     try {
-      final request = await client.openUrl(method, uri);
+      final request = await client
+          .openUrl(method, uri)
+          .timeout(const Duration(seconds: 25));
       request.headers.contentType = ContentType.json;
       if (token != null) {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
@@ -175,8 +180,13 @@ class ApiClient {
         request.write(jsonEncode(body));
       }
 
-      final response = await request.close();
-      final text = await utf8.decoder.bind(response).join();
+      final response = await request.close().timeout(
+        const Duration(seconds: 25),
+      );
+      final text = await utf8.decoder
+          .bind(response)
+          .join()
+          .timeout(const Duration(seconds: 25));
       final decoded = text.isEmpty ? <String, dynamic>{} : jsonDecode(text);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -189,6 +199,8 @@ class ApiClient {
       return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
     } on SocketException {
       throw const ApiException('서버에 연결할 수 없습니다. API 서버가 켜져 있는지 확인하세요.');
+    } on TimeoutException {
+      throw const ApiException('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도하세요.');
     } finally {
       client.close(force: true);
     }

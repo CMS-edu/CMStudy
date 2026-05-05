@@ -40,10 +40,10 @@ class _LoginScreenState extends State<LoginScreen> {
               children: [
                 if (widget.controller.showImages) ...[
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(8),
                     child: Image.asset(
                       AppAssets.loginHero,
-                      height: 180,
+                      height: 178,
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -53,12 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'CMStudy',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0,
                   ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '오늘 계획부터 집중 기록까지 한 번에 관리해요.',
+                  '스탑워치 기록, 과목 밸런스, 공부 분석을 한 흐름으로 관리하세요.',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyLarge?.copyWith(color: Colors.blueGrey),
@@ -88,24 +89,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               controller: nicknameController,
                               decoration: const InputDecoration(
                                 labelText: '닉네임',
-                                border: OutlineInputBorder(),
                               ),
                               validator: (value) =>
                                   value == null || value.trim().length < 2
-                                  ? '닉네임을 2자 이상 입력하세요.'
+                                  ? '닉네임을 2자 이상 입력하세요'
                                   : null,
                             ),
                           if (isRegister) const SizedBox(height: 12),
                           TextFormField(
                             controller: emailController,
                             keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: '이메일',
-                              border: OutlineInputBorder(),
-                            ),
+                            decoration: const InputDecoration(labelText: '이메일'),
                             validator: (value) =>
                                 value == null || !value.contains('@')
-                                ? '이메일을 입력하세요.'
+                                ? '이메일을 입력하세요'
                                 : null,
                           ),
                           const SizedBox(height: 12),
@@ -114,11 +111,10 @@ class _LoginScreenState extends State<LoginScreen> {
                             obscureText: true,
                             decoration: const InputDecoration(
                               labelText: '비밀번호',
-                              border: OutlineInputBorder(),
                             ),
                             validator: (value) =>
                                 value == null || value.length < 8
-                                ? '비밀번호는 8자 이상이어야 합니다.'
+                                ? '비밀번호는 8자 이상이어야 합니다'
                                 : null,
                           ),
                           if (widget.controller.errorMessage != null) ...[
@@ -135,7 +131,15 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: widget.controller.isBusy ? null : submit,
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: Text(isRegister ? '계정 만들기' : '로그인'),
+                              child: widget.controller.isBusy
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                      ),
+                                    )
+                                  : Text(isRegister ? '계정 만들기' : '로그인'),
                             ),
                           ),
                         ],
@@ -145,7 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 14),
                 const Text(
-                  '계획, 집중, 통계를 하나의 흐름으로 관리하세요.',
+                  '공부량만 세는 앱이 아니라 다음 행동을 정해주는 앱으로 설계했습니다.',
                   style: TextStyle(color: Colors.blueGrey),
                   textAlign: TextAlign.center,
                 ),

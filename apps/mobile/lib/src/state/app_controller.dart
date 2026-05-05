@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api_client.dart';
+import '../core/app_theme.dart';
 import '../models/models.dart';
 
 class AppController extends ChangeNotifier {
@@ -12,6 +13,7 @@ class AppController extends ChangeNotifier {
   static const tokenKey = 'cmstudy.accessToken';
   static const userKey = 'cmstudy.user';
   static const themeModeKey = 'cmstudy.themeMode';
+  static const themePresetKey = 'cmstudy.themePreset';
   static const accentColorKey = 'cmstudy.accentColor';
   static const showPlansOnHomeKey = 'cmstudy.showPlansOnHome';
   static const showImagesKey = 'cmstudy.showImages';
@@ -25,6 +27,7 @@ class AppController extends ChangeNotifier {
   StudyStats stats = StudyStats.empty;
   DateTime selectedDate = DateTime.now();
   ThemeMode themeMode = ThemeMode.system;
+  CmThemePreset themePreset = CmThemePreset.graphite;
   int accentColorValue = 0xFF2563EB;
   bool showPlansOnHome = false;
   bool showImages = true;
@@ -35,7 +38,9 @@ class AppController extends ChangeNotifier {
 
   bool get isAuthenticated => user != null && api.token != null;
 
-  Color get accentColor => Color(accentColorValue);
+  CmThemeProfile get themeProfile => cmThemeProfile(themePreset);
+
+  Color get accentColor => themeProfile.seedColor;
 
   int get openTaskCount => tasks.where((task) => !task.isDone).length;
 
@@ -96,6 +101,7 @@ class AppController extends ChangeNotifier {
       'dark' => ThemeMode.dark,
       _ => ThemeMode.system,
     };
+    themePreset = parseThemePreset(preferences.getString(themePresetKey));
     accentColorValue = preferences.getInt(accentColorKey) ?? 0xFF2563EB;
     showPlansOnHome = preferences.getBool(showPlansOnHomeKey) ?? false;
     showImages = preferences.getBool(showImagesKey) ?? true;
@@ -112,6 +118,15 @@ class AppController extends ChangeNotifier {
   Future<void> setAccentColor(Color value) async {
     accentColorValue = value.toARGB32();
     final preferences = await SharedPreferences.getInstance();
+    await preferences.setInt(accentColorKey, accentColorValue);
+    notifyListeners();
+  }
+
+  Future<void> setThemePreset(CmThemePreset value) async {
+    themePreset = value;
+    accentColorValue = cmThemeProfile(value).seedColor.toARGB32();
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString(themePresetKey, value.name);
     await preferences.setInt(accentColorKey, accentColorValue);
     notifyListeners();
   }
@@ -233,6 +248,7 @@ class AppController extends ChangeNotifier {
   Future<void> recordFocusSession({
     required int minutes,
     String? subjectId,
+    String? note,
   }) async {
     await _run(() async {
       final endedAt = DateTime.now();
@@ -241,6 +257,7 @@ class AppController extends ChangeNotifier {
         endedAt: endedAt,
         durationMinutes: minutes,
         subjectId: subjectId,
+        note: note,
       );
       await loadDashboard();
     });

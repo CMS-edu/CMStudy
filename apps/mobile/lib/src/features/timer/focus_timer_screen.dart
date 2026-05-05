@@ -142,17 +142,30 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> {
     final minutes = (elapsedSeconds / 60).ceil().clamp(1, 720);
     final review = await showSessionReviewSheet(context, subject, minutes);
     if (review == null) return;
-
-    await widget.controller.recordFocusSession(
-      minutes: minutes,
-      subjectId: subject.id,
-      note: review.toNote(),
-    );
     if (!mounted) return;
-    setState(() => elapsedSeconds = 0);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${subject.name} ${formatMinutes(minutes)} 저장')),
-    );
+
+    await Future<void>.delayed(const Duration(milliseconds: 180));
+    if (!mounted) return;
+
+    try {
+      await widget.controller.recordFocusSession(
+        minutes: minutes,
+        subjectId: subject.id,
+        note: review.toNote(),
+      );
+      if (!mounted) return;
+      setState(() => elapsedSeconds = 0);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('${subject.name} ${formatMinutes(minutes)} 저장')),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(widget.controller.errorMessage ?? '공부 기록을 저장하지 못했습니다.'),
+        ),
+      );
+    }
   }
 }
 
@@ -419,82 +432,102 @@ Future<SessionReview?> showSessionReviewSheet(
   StudySubject subject,
   int minutes,
 ) {
-  final memoController = TextEditingController();
-  var focus = 4;
-  var difficulty = 3;
-
   return showModalBottomSheet<SessionReview>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setModalState) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              18,
-              18,
-              18,
-              MediaQuery.of(context).viewInsets.bottom + 18,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  '세션 저장',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  '${subject.name} · ${formatMinutes(minutes)}',
-                  style: const TextStyle(color: Colors.blueGrey),
-                ),
-                const SizedBox(height: 18),
-                _RatingSelector(
-                  label: '집중도',
-                  value: focus,
-                  onChanged: (value) => setModalState(() => focus = value),
-                ),
-                const SizedBox(height: 14),
-                _RatingSelector(
-                  label: '난이도',
-                  value: difficulty,
-                  onChanged: (value) => setModalState(() => difficulty = value),
-                ),
-                const SizedBox(height: 14),
-                TextField(
-                  controller: memoController,
-                  minLines: 2,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: '공부 내용 메모',
-                    hintText: '예: 미적분 문제풀이, 오답 12번까지',
-                  ),
-                ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: () {
-                    Navigator.pop(
-                      context,
-                      SessionReview(
-                        focusRating: focus,
-                        difficultyRating: difficulty,
-                        memo: memoController.text,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.save_outlined),
-                  label: const Text('저장'),
-                ),
-              ],
-            ),
-          );
-        },
-      );
+      return _SessionReviewSheet(subject: subject, minutes: minutes);
     },
-  ).whenComplete(memoController.dispose);
+  );
+}
+
+class _SessionReviewSheet extends StatefulWidget {
+  const _SessionReviewSheet({required this.subject, required this.minutes});
+
+  final StudySubject subject;
+  final int minutes;
+
+  @override
+  State<_SessionReviewSheet> createState() => _SessionReviewSheetState();
+}
+
+class _SessionReviewSheetState extends State<_SessionReviewSheet> {
+  final memoController = TextEditingController();
+  int focus = 4;
+  int difficulty = 3;
+
+  @override
+  void dispose() {
+    memoController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          18,
+          18,
+          18,
+          MediaQuery.viewInsetsOf(context).bottom + 18,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              '세션 저장',
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${widget.subject.name} · ${formatMinutes(widget.minutes)}',
+              style: const TextStyle(color: Colors.blueGrey),
+            ),
+            const SizedBox(height: 18),
+            _RatingSelector(
+              label: '집중도',
+              value: focus,
+              onChanged: (value) => setState(() => focus = value),
+            ),
+            const SizedBox(height: 14),
+            _RatingSelector(
+              label: '난이도',
+              value: difficulty,
+              onChanged: (value) => setState(() => difficulty = value),
+            ),
+            const SizedBox(height: 14),
+            TextField(
+              controller: memoController,
+              minLines: 2,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: '공부 내용 메모',
+                hintText: '예: 미적분 문제풀이, 오답 12번까지',
+              ),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).pop(
+                  SessionReview(
+                    focusRating: focus,
+                    difficultyRating: difficulty,
+                    memo: memoController.text,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.save_outlined),
+              label: const Text('저장'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _RatingSelector extends StatelessWidget {

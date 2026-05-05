@@ -250,8 +250,9 @@ class AppController extends ChangeNotifier {
     String? subjectId,
     String? note,
   }) async {
-    await _run(() async {
-      final endedAt = DateTime.now();
+    errorMessage = null;
+    final endedAt = DateTime.now();
+    try {
       await api.recordStudySession(
         startedAt: endedAt.subtract(Duration(minutes: minutes)),
         endedAt: endedAt,
@@ -260,7 +261,15 @@ class AppController extends ChangeNotifier {
         note: note,
       );
       await loadDashboard();
-    });
+    } on ApiException catch (error) {
+      errorMessage = error.message;
+      notifyListeners();
+      rethrow;
+    } catch (_) {
+      errorMessage = '공부 기록을 저장하지 못했습니다.';
+      notifyListeners();
+      rethrow;
+    }
   }
 
   Future<void> logout() async {

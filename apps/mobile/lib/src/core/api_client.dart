@@ -73,6 +73,37 @@ class ApiClient {
     return DashboardData.fromJson(json);
   }
 
+  Future<MissionData> getMissionData(DateTime date) async {
+    final json = await _request(
+      'GET',
+      '/missions',
+      query: {
+        'date': isoDate(date),
+        'timezoneOffsetMinutes': date.timeZoneOffset.inMinutes.toString(),
+      },
+    );
+    return MissionData.fromJson(json);
+  }
+
+  Future<void> createMissionGroup({
+    required String name,
+    required int weeklyTargetMinutes,
+  }) async {
+    await _request(
+      'POST',
+      '/missions/groups',
+      body: {'name': name, 'weeklyTargetMinutes': weeklyTargetMinutes},
+    );
+  }
+
+  Future<void> joinMissionGroup(String inviteCode) async {
+    await _request(
+      'POST',
+      '/missions/groups/join',
+      body: {'inviteCode': inviteCode},
+    );
+  }
+
   Future<StudySubject> createSubject({
     required String name,
     required String color,

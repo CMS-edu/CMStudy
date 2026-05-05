@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { MissionsModule } from './missions/missions.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StatsModule } from './stats/stats.module';
 import { StudySessionsModule } from './study-sessions/study-sessions.module';
@@ -18,6 +19,7 @@ import { SubjectsModule } from './subjects/subjects.module';
     StudyTasksModule,
     StudySessionsModule,
     StatsModule,
+    MissionsModule,
     DashboardModule,
   ],
 })

@@ -25,6 +25,7 @@ class AppController extends ChangeNotifier {
   List<StudySubject> subjects = const [];
   List<StudyTask> tasks = const [];
   StudyStats stats = StudyStats.empty;
+  MissionData missionData = MissionData.empty;
   DateTime selectedDate = DateTime.now();
   ThemeMode themeMode = ThemeMode.system;
   CmThemePreset themePreset = CmThemePreset.graphite;
@@ -166,6 +167,11 @@ class AppController extends ChangeNotifier {
     subjects = data.subjects;
     tasks = data.tasks;
     stats = data.stats;
+    try {
+      missionData = await api.getMissionData(selectedDate);
+    } catch (_) {
+      missionData = MissionData.empty;
+    }
     notifyListeners();
   }
 
@@ -245,6 +251,28 @@ class AppController extends ChangeNotifier {
     });
   }
 
+  Future<void> createMissionGroup({
+    required String name,
+    required int weeklyTargetMinutes,
+  }) async {
+    await _run(() async {
+      await api.createMissionGroup(
+        name: name,
+        weeklyTargetMinutes: weeklyTargetMinutes,
+      );
+      missionData = await api.getMissionData(selectedDate);
+      notifyListeners();
+    });
+  }
+
+  Future<void> joinMissionGroup(String inviteCode) async {
+    await _run(() async {
+      await api.joinMissionGroup(inviteCode);
+      missionData = await api.getMissionData(selectedDate);
+      notifyListeners();
+    });
+  }
+
   Future<void> recordFocusSession({
     required int minutes,
     String? subjectId,
@@ -283,6 +311,7 @@ class AppController extends ChangeNotifier {
     subjects = const [];
     tasks = const [];
     stats = StudyStats.empty;
+    missionData = MissionData.empty;
     selectedDate = DateTime.now();
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(tokenKey);

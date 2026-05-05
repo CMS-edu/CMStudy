@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../state/app_controller.dart';
+import '../missions/missions_screen.dart';
 import '../settings/settings_screen.dart';
 import '../stats/stats_screen.dart';
 import '../subjects/subjects_screen.dart';
@@ -24,6 +25,7 @@ class _HomeShellState extends State<HomeShell> {
     final screens = [
       DashboardScreen(controller: widget.controller),
       FocusTimerScreen(controller: widget.controller),
+      MissionsScreen(controller: widget.controller),
       StatsScreen(controller: widget.controller),
       SubjectsScreen(controller: widget.controller),
     ];
@@ -64,6 +66,11 @@ class _HomeShellState extends State<HomeShell> {
             icon: Icon(Icons.timer_outlined),
             selectedIcon: Icon(Icons.timer),
             label: '기록',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.flag_outlined),
+            selectedIcon: Icon(Icons.flag),
+            label: '미션',
           ),
           NavigationDestination(
             icon: Icon(Icons.analytics_outlined),

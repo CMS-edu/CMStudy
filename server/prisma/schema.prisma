@@ -18,6 +18,7 @@ model User {
   deviceTokens DeviceToken[]
   ownedMissionGroups MissionGroup[]       @relation("MissionGroupOwner")
   missionMemberships MissionGroupMember[]
+  timeMissions MissionTimeRule[]
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 }
@@ -88,6 +89,7 @@ model MissionGroup {
   inviteCode          String               @unique
   weeklyTargetMinutes Int                  @default(600)
   members             MissionGroupMember[]
+  timeRules           MissionTimeRule[]
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
@@ -105,4 +107,22 @@ model MissionGroupMember {
 
   @@unique([groupId, userId])
   @@index([userId])
+}
+
+model MissionTimeRule {
+  id              String        @id @default(cuid())
+  userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  groupId         String?
+  group           MissionGroup? @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  title           String
+  startMinute     Int
+  endMinute       Int
+  targetMinutes   Int           @default(60)
+  reminderEnabled Boolean       @default(true)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([groupId])
 }

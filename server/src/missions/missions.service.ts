@@ -1,7 +1,15 @@
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
-import { CreateMissionGroupDto, JoinMissionGroupDto } from './dto';
+import {
+  CreateMissionGroupDto,
+  CreateTimeMissionDto,
+  JoinMissionGroupDto,
+} from './dto';
 
 @Injectable()
 export class MissionsService {
@@ -76,6 +84,50 @@ export class MissionsService {
       timezoneOffsetMinutes,
     });
 
+    const memberIdsByGroup = new Map<string, string[]>();
+    for (const membership of memberships) {
+      memberIdsByGroup.set(
+        membership.group.id,
+        membership.group.members.map((member) => member.userId),
+      );
+    }
+    const groupIds = [...memberIdsByGroup.keys()];
+    const allTrackedUserIds = [
+      ...new Set([userId, ...[...memberIdsByGroup.values()].flat()]),
+    ];
+
+    const [timeRules, sharedTodaySessions] = await Promise.all([
+      this.prisma.missionTimeRule.findMany({
+        where: {
+          OR: [{ userId, groupId: null }, { groupId: { in: groupIds } }],
+        },
+        include: {
+          group: {
+            select: {
+              id: true,
+              name: true,
+              members: { select: { userId: true } },
+            },
+          },
+        },
+        orderBy: [{ startMinute: 'asc' }, { createdAt: 'asc' }],
+      }),
+      this.prisma.studySession.findMany({
+        where: {
+          userId: { in: allTrackedUserIds },
+          startedAt: { gte: todayFrom, lt: todayUntil },
+        },
+        select: { userId: true, startedAt: true, durationMinutes: true },
+      }),
+    ]);
+
+    const timeMissions = buildTimeMissions({
+      rules: timeRules,
+      sessions: sharedTodaySessions,
+      userId,
+      timezoneOffsetMinutes,
+    });
+
     const groups = await Promise.all(
       memberships.map(async (membership) => {
         const memberIds = membership.group.members.map((member) => member.userId);
@@ -110,6 +162,13 @@ export class MissionsService {
             progressPercent: percent(weeklyMinutes, memberTarget),
           };
         });
+        const rankedMembers = members
+          .sort((a, b) => b.weeklyMinutes - a.weeklyMinutes)
+          .map((member, index) => ({
+            ...member,
+            rank: index + 1,
+            isCurrentUser: member.userId === userId,
+          }));
         const weeklyMinutes = Array.from(minutesByUser.values()).reduce(
           (sum, minutes) => sum + minutes,
           0,
@@ -126,13 +185,14 @@ export class MissionsService {
           ),
           memberCount: membership.group.members.length,
           myMinutes: minutesByUser.get(userId) ?? 0,
-          members: members.sort((a, b) => b.weeklyMinutes - a.weeklyMinutes),
+          members: rankedMembers,
         };
       }),
     );
 
     return {
       personal,
+      timeMissions,
       groups,
       weekStart,
       weekEnd: addDays(weekEnd, -1),
@@ -175,6 +235,30 @@ export class MissionsService {
     return group;
   }
 
+  async createTimeMission(userId: string, dto: CreateTimeMissionDto) {
+    const groupId = dto.groupId?.trim();
+    if (groupId) {
+      const membership = await this.prisma.missionGroupMember.findUnique({
+        where: { groupId_userId: { groupId, userId } },
+      });
+      if (!membership) {
+        throw new NotFoundException('참여 중인 그룹에만 시간대 미션을 만들 수 있습니다.');
+      }
+    }
+
+    return this.prisma.missionTimeRule.create({
+      data: {
+        userId,
+        groupId: groupId || null,
+        title: dto.title.trim(),
+        startMinute: dto.startMinute,
+        endMinute: dto.endMinute,
+        targetMinutes: dto.targetMinutes,
+        reminderEnabled: dto.reminderEnabled ?? true,
+      },
+    });
+  }
+
   private async generateInviteCode() {
     for (let attempt = 0; attempt < 10; attempt += 1) {
       const code = Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -200,6 +284,32 @@ type PersonalMissionInput = {
   dailyTarget: number;
   weekSessions: Array<{ startedAt: Date; durationMinutes: number }>;
   weekStart: string;
+  timezoneOffsetMinutes: number;
+};
+
+type TimeMissionRuleLike = {
+  id: string;
+  title: string;
+  startMinute: number;
+  endMinute: number;
+  targetMinutes: number;
+  reminderEnabled: boolean;
+  groupId: string | null;
+  group: {
+    id: string;
+    name: string;
+    members: Array<{ userId: string }>;
+  } | null;
+};
+
+type TimeMissionInput = {
+  rules: TimeMissionRuleLike[];
+  sessions: Array<{
+    userId: string;
+    startedAt: Date;
+    durationMinutes: number;
+  }>;
+  userId: string;
   timezoneOffsetMinutes: number;
 };
 
@@ -269,6 +379,42 @@ function buildPersonalMissions(input: PersonalMissionInput) {
   ];
 }
 
+function buildTimeMissions(input: TimeMissionInput) {
+  return input.rules.map((rule) => {
+    const participantIds = rule.group
+      ? rule.group.members.map((member) => member.userId)
+      : [input.userId];
+    const participantSet = new Set(participantIds);
+    const matchingSessions = input.sessions.filter((session) => {
+      if (!participantSet.has(session.userId)) return false;
+      const minute = toLocalMinuteOfDay(
+        session.startedAt,
+        input.timezoneOffsetMinutes,
+      );
+      return isMinuteInWindow(minute, rule.startMinute, rule.endMinute);
+    });
+    const myMinutes = sumMinutes(
+      matchingSessions.filter((session) => session.userId === input.userId),
+    );
+    const currentMinutes = sumMinutes(matchingSessions);
+    return {
+      id: rule.id,
+      title: rule.title,
+      startMinute: rule.startMinute,
+      endMinute: rule.endMinute,
+      targetMinutes: rule.targetMinutes,
+      currentMinutes,
+      myMinutes,
+      progressPercent: percent(currentMinutes, rule.targetMinutes),
+      status: missionStatus(currentMinutes, rule.targetMinutes),
+      reminderEnabled: rule.reminderEnabled,
+      groupId: rule.groupId,
+      groupName: rule.group?.name ?? null,
+      participantCount: participantIds.length,
+    };
+  });
+}
+
 function missionStatus(current: number, target: number) {
   if (target <= 0) return 'locked';
   if (current >= target) return 'completed';
@@ -310,4 +456,17 @@ function toLocalDateKey(date: Date, timezoneOffsetMinutes: number) {
   return new Date(date.getTime() + timezoneOffsetMinutes * 60_000)
     .toISOString()
     .slice(0, 10);
+}
+
+function toLocalMinuteOfDay(date: Date, timezoneOffsetMinutes: number) {
+  const local = new Date(date.getTime() + timezoneOffsetMinutes * 60_000);
+  return local.getUTCHours() * 60 + local.getUTCMinutes();
+}
+
+function isMinuteInWindow(minute: number, startMinute: number, endMinute: number) {
+  if (startMinute === endMinute) return true;
+  if (startMinute < endMinute) {
+    return minute >= startMinute && minute < endMinute;
+  }
+  return minute >= startMinute || minute < endMinute;
 }

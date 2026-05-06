@@ -104,6 +104,28 @@ class ApiClient {
     );
   }
 
+  Future<void> createTimeMission({
+    required String title,
+    required int startMinute,
+    required int endMinute,
+    required int targetMinutes,
+    required bool reminderEnabled,
+    String? groupId,
+  }) async {
+    await _request(
+      'POST',
+      '/missions/time-rules',
+      body: {
+        'title': title,
+        'startMinute': startMinute,
+        'endMinute': endMinute,
+        'targetMinutes': targetMinutes,
+        'reminderEnabled': reminderEnabled,
+        if (groupId != null && groupId.isNotEmpty) 'groupId': groupId,
+      },
+    );
+  }
+
   Future<StudySubject> createSubject({
     required String name,
     required String color,

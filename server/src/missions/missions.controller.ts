@@ -1,7 +1,11 @@
 import { Body, Controller, Get, Post, Query, Req, UseGuards } from '@nestjs/common';
 
 import { AuthenticatedRequest, JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CreateMissionGroupDto, JoinMissionGroupDto } from './dto';
+import {
+  CreateMissionGroupDto,
+  CreateTimeMissionDto,
+  JoinMissionGroupDto,
+} from './dto';
 import { MissionsService } from './missions.service';
 
 @Controller('missions')
@@ -36,5 +40,13 @@ export class MissionsController {
     @Body() dto: JoinMissionGroupDto,
   ) {
     return this.missionsService.joinGroup(request.user!.sub, dto);
+  }
+
+  @Post('time-rules')
+  createTimeMission(
+    @Req() request: AuthenticatedRequest,
+    @Body() dto: CreateTimeMissionDto,
+  ) {
+    return this.missionsService.createTimeMission(request.user!.sub, dto);
   }
 }

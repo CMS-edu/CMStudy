@@ -5,9 +5,14 @@ import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
 
 class MissionsScreen extends StatelessWidget {
-  const MissionsScreen({super.key, required this.controller});
+  const MissionsScreen({
+    super.key,
+    required this.controller,
+    required this.onStartStudy,
+  });
 
   final AppController controller;
+  final VoidCallback onStartStudy;
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +36,24 @@ class MissionsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _MissionHero(data: missionData),
+            const SizedBox(height: 18),
+            _SectionHeader(
+              title: '시간대 미션',
+              trailing: '${missionData.timeMissions.length}개',
+            ),
+            const SizedBox(height: 10),
+            if (missionData.timeMissions.isEmpty)
+              _EmptyTimeMissionCard(controller: controller)
+            else
+              ...missionData.timeMissions.map(
+                (mission) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: _TimeMissionCard(
+                    mission: mission,
+                    onStartStudy: onStartStudy,
+                  ),
+                ),
+              ),
             const SizedBox(height: 18),
             const _SectionHeader(title: '개인 미션'),
             const SizedBox(height: 10),
@@ -76,10 +99,10 @@ class _MissionHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final completed = data.personal
-        .where((mission) => mission.isCompleted)
-        .length;
-    final total = data.personal.length;
+    final completed =
+        data.personal.where((mission) => mission.isCompleted).length +
+        data.timeMissions.where((mission) => mission.isCompleted).length;
+    final total = data.personal.length + data.timeMissions.length;
     final progress = total == 0 ? 0 : ((completed / total) * 100).round();
     return Card(
       child: Padding(
@@ -116,7 +139,7 @@ class _MissionHero extends StatelessWidget {
                   Text(
                     total == 0
                         ? '미션 데이터를 불러오는 중입니다.'
-                        : '$completed/$total개 개인 미션 완료',
+                        : '$completed/$total개 미션 완료 · 그룹 ${data.groups.length}개',
                     style: const TextStyle(color: Colors.blueGrey),
                   ),
                   const SizedBox(height: 8),
@@ -132,6 +155,188 @@ class _MissionHero extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyTimeMissionCard extends StatelessWidget {
+  const _EmptyTimeMissionCard({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.alarm_add_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '기상 공부 미션을 만들어보세요',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              '예: 05:30-07:00에 60분 공부. 알림을 누르면 앱이 기록 탭으로 열립니다.',
+              style: TextStyle(color: Colors.blueGrey),
+            ),
+            const SizedBox(height: 14),
+            FilledButton.icon(
+              onPressed: () => showCreateTimeMissionSheet(context, controller),
+              icon: const Icon(Icons.add_alarm_outlined),
+              label: const Text('시간대 미션 만들기'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TimeMissionCard extends StatelessWidget {
+  const _TimeMissionCard({required this.mission, required this.onStartStudy});
+
+  final TimeMissionSummary mission;
+  final VoidCallback onStartStudy;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = mission.isCompleted
+        ? const Color(0xFF059669)
+        : Theme.of(context).colorScheme.primary;
+    final scope = mission.isGroupMission
+        ? '${mission.groupName ?? '그룹'} · ${mission.participantCount}명'
+        : '개인 미션';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    color: color.withAlpha(24),
+                  ),
+                  child: Icon(
+                    mission.isCompleted
+                        ? Icons.verified_outlined
+                        : Icons.schedule_outlined,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        mission.title,
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        '${timeRangeLabel(mission.startMinute, mission.endMinute)} · $scope',
+                        style: const TextStyle(color: Colors.blueGrey),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                if (mission.reminderEnabled)
+                  const Tooltip(
+                    message: '매일 시작 시간 알림',
+                    child: Icon(Icons.notifications_active_outlined, size: 20),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: _MetricLine(
+                    label: mission.isGroupMission ? '전체' : '오늘',
+                    value:
+                        '${formatMinutes(mission.currentMinutes)} / ${formatMinutes(mission.targetMinutes)}',
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: _MetricLine(
+                    label: '내 기록',
+                    value: formatMinutes(mission.myMinutes),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: (mission.progressPercent / 100).clamp(0.0, 1.0),
+                minHeight: 9,
+                color: color,
+                backgroundColor: color.withAlpha(26),
+              ),
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.tonalIcon(
+                onPressed: onStartStudy,
+                icon: const Icon(Icons.play_arrow_rounded),
+                label: const Text('공부 시작'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetricLine extends StatelessWidget {
+  const _MetricLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.blueGrey)),
+          const SizedBox(height: 2),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
+        ],
       ),
     );
   }
@@ -290,6 +495,21 @@ class _MissionGroupCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 14),
+            Row(
+              children: [
+                Icon(
+                  Icons.leaderboard_outlined,
+                  size: 18,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 6),
+                const Text(
+                  '주간 랭킹',
+                  style: TextStyle(fontWeight: FontWeight.w900),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
             ...group.members
                 .take(5)
                 .map(
@@ -330,18 +550,50 @@ class _MemberRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = member.isCurrentUser
+        ? Theme.of(context).colorScheme.primary
+        : Colors.blueGrey;
     return Row(
       children: [
-        CircleAvatar(radius: 14, child: Text(member.nickname.characters.first)),
+        Container(
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: color.withAlpha(member.isCurrentUser ? 32 : 18),
+          ),
+          child: Text(
+            member.rank == 0 ? '-' : '${member.rank}',
+            style: TextStyle(color: color, fontWeight: FontWeight.w900),
+          ),
+        ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
-            member.nickname,
+            member.isCurrentUser ? '${member.nickname} · 나' : member.nickname,
             style: const TextStyle(fontWeight: FontWeight.w800),
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        Text(formatMinutes(member.weeklyMinutes)),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 82,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: (member.progressPercent / 100).clamp(0.0, 1.0),
+              minHeight: 6,
+              color: color,
+              backgroundColor: color.withAlpha(20),
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          formatMinutes(member.weeklyMinutes),
+          style: const TextStyle(fontWeight: FontWeight.w800),
+        ),
       ],
     );
   }
@@ -358,6 +610,12 @@ class _MissionActions extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
+        FloatingActionButton.small(
+          heroTag: 'create-time-mission',
+          onPressed: () => showCreateTimeMissionSheet(context, controller),
+          child: const Icon(Icons.add_alarm_outlined),
+        ),
+        const SizedBox(height: 8),
         FloatingActionButton.small(
           heroTag: 'join-mission-group',
           onPressed: () => showJoinGroupSheet(context, controller),
@@ -399,6 +657,34 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
+class _TimeMissionDraft {
+  const _TimeMissionDraft({
+    required this.title,
+    required this.startMinute,
+    required this.endMinute,
+    required this.targetMinutes,
+    required this.reminderEnabled,
+    this.groupId,
+  });
+
+  final String title;
+  final int startMinute;
+  final int endMinute;
+  final int targetMinutes;
+  final bool reminderEnabled;
+  final String? groupId;
+}
+
+class _CreateGroupDraft {
+  const _CreateGroupDraft({
+    required this.name,
+    required this.weeklyTargetMinutes,
+  });
+
+  final String name;
+  final int weeklyTargetMinutes;
+}
+
 class _EmptyMissionCard extends StatelessWidget {
   const _EmptyMissionCard({required this.title, required this.message});
 
@@ -437,13 +723,168 @@ class _EmptyMissionCard extends StatelessWidget {
   }
 }
 
+Future<void> showCreateTimeMissionSheet(
+  BuildContext context,
+  AppController controller,
+) async {
+  final titleController = TextEditingController(text: '기상 공부 미션');
+  var startTime = const TimeOfDay(hour: 5, minute: 30);
+  var endTime = const TimeOfDay(hour: 7, minute: 0);
+  var targetMinutes = 60;
+  var reminderEnabled = true;
+  String? groupId;
+
+  final result = await showModalBottomSheet<_TimeMissionDraft>(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setModalState) {
+          Future<void> pickStart() async {
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: startTime,
+            );
+            if (picked != null) setModalState(() => startTime = picked);
+          }
+
+          Future<void> pickEnd() async {
+            final picked = await showTimePicker(
+              context: context,
+              initialTime: endTime,
+            );
+            if (picked != null) setModalState(() => endTime = picked);
+          }
+
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              18,
+              18,
+              18,
+              MediaQuery.viewInsetsOf(context).bottom + 18,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  '시간대 미션 만들기',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(labelText: '미션 이름'),
+                  autofocus: true,
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: pickStart,
+                        icon: const Icon(Icons.play_arrow_outlined),
+                        label: Text('시작 ${startTime.format(context)}'),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: pickEnd,
+                        icon: const Icon(Icons.stop_outlined),
+                        label: Text('종료 ${endTime.format(context)}'),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String?>(
+                  initialValue: groupId,
+                  decoration: const InputDecoration(labelText: '적용 범위'),
+                  items: [
+                    const DropdownMenuItem<String?>(
+                      value: null,
+                      child: Text('개인 미션'),
+                    ),
+                    ...controller.missionData.groups.map(
+                      (group) => DropdownMenuItem<String?>(
+                        value: group.id,
+                        child: Text('${group.name} 그룹 미션'),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) => setModalState(() => groupId = value),
+                ),
+                const SizedBox(height: 16),
+                Text('목표 시간 ${formatMinutes(targetMinutes)}'),
+                Slider(
+                  value: targetMinutes.toDouble(),
+                  min: 10,
+                  max: 240,
+                  divisions: 23,
+                  label: formatMinutes(targetMinutes),
+                  onChanged: (value) {
+                    setModalState(() => targetMinutes = value.round());
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  value: reminderEnabled,
+                  onChanged: (value) {
+                    setModalState(() => reminderEnabled = value);
+                  },
+                  title: const Text('시작 시간 알림'),
+                  subtitle: const Text('알림을 누르면 기록 탭으로 이동합니다.'),
+                ),
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  onPressed: () {
+                    final title = titleController.text.trim();
+                    if (title.length < 2) return;
+                    Navigator.pop(
+                      context,
+                      _TimeMissionDraft(
+                        title: title,
+                        startMinute: timeOfDayToMinutes(startTime),
+                        endMinute: timeOfDayToMinutes(endTime),
+                        targetMinutes: targetMinutes,
+                        reminderEnabled: reminderEnabled,
+                        groupId: groupId,
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.add_alarm_outlined),
+                  label: const Text('미션 만들기'),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  ).whenComplete(titleController.dispose);
+
+  if (result == null) return;
+  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await controller.createTimeMission(
+    title: result.title,
+    startMinute: result.startMinute,
+    endMinute: result.endMinute,
+    targetMinutes: result.targetMinutes,
+    reminderEnabled: result.reminderEnabled,
+    groupId: result.groupId,
+  );
+}
+
 Future<void> showCreateGroupSheet(
   BuildContext context,
   AppController controller,
-) {
+) async {
   final nameController = TextEditingController(text: '새 미션 그룹');
   var targetMinutes = 1800;
-  return showModalBottomSheet<void>(
+  final result = await showModalBottomSheet<_CreateGroupDraft>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -486,14 +927,16 @@ Future<void> showCreateGroupSheet(
                 ),
                 const SizedBox(height: 10),
                 FilledButton.icon(
-                  onPressed: () async {
+                  onPressed: () {
                     final name = nameController.text.trim();
                     if (name.length < 2) return;
-                    await controller.createMissionGroup(
-                      name: name,
-                      weeklyTargetMinutes: targetMinutes,
+                    Navigator.pop(
+                      context,
+                      _CreateGroupDraft(
+                        name: name,
+                        weeklyTargetMinutes: targetMinutes,
+                      ),
                     );
-                    if (context.mounted) Navigator.pop(context);
                   },
                   icon: const Icon(Icons.group_add_outlined),
                   label: const Text('만들기'),
@@ -505,14 +948,21 @@ Future<void> showCreateGroupSheet(
       );
     },
   ).whenComplete(nameController.dispose);
+
+  if (result == null) return;
+  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await controller.createMissionGroup(
+    name: result.name,
+    weeklyTargetMinutes: result.weeklyTargetMinutes,
+  );
 }
 
 Future<void> showJoinGroupSheet(
   BuildContext context,
   AppController controller,
-) {
+) async {
   final codeController = TextEditingController();
-  return showModalBottomSheet<void>(
+  final inviteCode = await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -542,11 +992,10 @@ Future<void> showJoinGroupSheet(
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: () async {
+              onPressed: () {
                 final code = codeController.text.trim();
                 if (code.length < 4) return;
-                await controller.joinMissionGroup(code);
-                if (context.mounted) Navigator.pop(context);
+                Navigator.pop(context, code);
               },
               icon: const Icon(Icons.login),
               label: const Text('참여'),
@@ -556,6 +1005,10 @@ Future<void> showJoinGroupSheet(
       );
     },
   ).whenComplete(codeController.dispose);
+
+  if (inviteCode == null) return;
+  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await controller.joinMissionGroup(inviteCode);
 }
 
 String missionLabel(PersonalMission mission) {
@@ -566,4 +1019,19 @@ String missionLabel(PersonalMission mission) {
     return '${mission.currentCount}/${mission.targetCount}';
   }
   return '${mission.progressPercent}%';
+}
+
+int timeOfDayToMinutes(TimeOfDay time) {
+  return time.hour * 60 + time.minute;
+}
+
+String timeRangeLabel(int startMinute, int endMinute) {
+  return '${clockLabel(startMinute)}-${clockLabel(endMinute)}';
+}
+
+String clockLabel(int minuteOfDay) {
+  final minute = minuteOfDay.clamp(0, 1439);
+  final hour = minute ~/ 60;
+  final minutePart = minute % 60;
+  return '${hour.toString().padLeft(2, '0')}:${minutePart.toString().padLeft(2, '0')}';
 }

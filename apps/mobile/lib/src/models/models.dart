@@ -227,12 +227,14 @@ class DashboardData {
 class MissionData {
   const MissionData({
     required this.personal,
+    required this.timeMissions,
     required this.groups,
     required this.weekStart,
     required this.weekEnd,
   });
 
   final List<PersonalMission> personal;
+  final List<TimeMissionSummary> timeMissions;
   final List<MissionGroupSummary> groups;
   final String weekStart;
   final String weekEnd;
@@ -241,6 +243,11 @@ class MissionData {
     return MissionData(
       personal: (json['personal'] as List<dynamic>? ?? [])
           .map((item) => PersonalMission.fromJson(item as Map<String, dynamic>))
+          .toList(),
+      timeMissions: (json['timeMissions'] as List<dynamic>? ?? [])
+          .map(
+            (item) => TimeMissionSummary.fromJson(item as Map<String, dynamic>),
+          )
           .toList(),
       groups: (json['groups'] as List<dynamic>? ?? [])
           .map(
@@ -255,6 +262,7 @@ class MissionData {
 
   static const empty = MissionData(
     personal: [],
+    timeMissions: [],
     groups: [],
     weekStart: '',
     weekEnd: '',
@@ -297,6 +305,59 @@ class PersonalMission {
       currentMinutes: json['currentMinutes'] as int?,
       targetCount: json['targetCount'] as int?,
       currentCount: json['currentCount'] as int?,
+    );
+  }
+}
+
+class TimeMissionSummary {
+  const TimeMissionSummary({
+    required this.id,
+    required this.title,
+    required this.startMinute,
+    required this.endMinute,
+    required this.targetMinutes,
+    required this.currentMinutes,
+    required this.myMinutes,
+    required this.progressPercent,
+    required this.status,
+    required this.reminderEnabled,
+    required this.participantCount,
+    this.groupId,
+    this.groupName,
+  });
+
+  final String id;
+  final String title;
+  final int startMinute;
+  final int endMinute;
+  final int targetMinutes;
+  final int currentMinutes;
+  final int myMinutes;
+  final int progressPercent;
+  final String status;
+  final bool reminderEnabled;
+  final int participantCount;
+  final String? groupId;
+  final String? groupName;
+
+  bool get isCompleted => status == 'completed';
+  bool get isGroupMission => groupId != null && groupId!.isNotEmpty;
+
+  factory TimeMissionSummary.fromJson(Map<String, dynamic> json) {
+    return TimeMissionSummary(
+      id: json['id'] as String? ?? '',
+      title: json['title'] as String? ?? '',
+      startMinute: json['startMinute'] as int? ?? 0,
+      endMinute: json['endMinute'] as int? ?? 0,
+      targetMinutes: json['targetMinutes'] as int? ?? 0,
+      currentMinutes: json['currentMinutes'] as int? ?? 0,
+      myMinutes: json['myMinutes'] as int? ?? 0,
+      progressPercent: json['progressPercent'] as int? ?? 0,
+      status: json['status'] as String? ?? 'ready',
+      reminderEnabled: json['reminderEnabled'] as bool? ?? false,
+      participantCount: json['participantCount'] as int? ?? 1,
+      groupId: json['groupId'] as String?,
+      groupName: json['groupName'] as String?,
     );
   }
 }
@@ -351,6 +412,8 @@ class MissionMemberSummary {
     required this.role,
     required this.weeklyMinutes,
     required this.progressPercent,
+    required this.rank,
+    required this.isCurrentUser,
   });
 
   final String userId;
@@ -358,6 +421,8 @@ class MissionMemberSummary {
   final String role;
   final int weeklyMinutes;
   final int progressPercent;
+  final int rank;
+  final bool isCurrentUser;
 
   factory MissionMemberSummary.fromJson(Map<String, dynamic> json) {
     return MissionMemberSummary(
@@ -366,6 +431,8 @@ class MissionMemberSummary {
       role: json['role'] as String? ?? 'member',
       weeklyMinutes: json['weeklyMinutes'] as int? ?? 0,
       progressPercent: json['progressPercent'] as int? ?? 0,
+      rank: json['rank'] as int? ?? 0,
+      isCurrentUser: json['isCurrentUser'] as bool? ?? false,
     );
   }
 }

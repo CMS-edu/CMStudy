@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api_client.dart';
 import '../core/app_theme.dart';
+import '../core/local_reminders.dart';
 import '../models/models.dart';
 
 class AppController extends ChangeNotifier {
@@ -268,6 +269,37 @@ class AppController extends ChangeNotifier {
   Future<void> joinMissionGroup(String inviteCode) async {
     await _run(() async {
       await api.joinMissionGroup(inviteCode);
+      missionData = await api.getMissionData(selectedDate);
+      notifyListeners();
+    });
+  }
+
+  Future<void> createTimeMission({
+    required String title,
+    required int startMinute,
+    required int endMinute,
+    required int targetMinutes,
+    required bool reminderEnabled,
+    String? groupId,
+  }) async {
+    await _run(() async {
+      await api.createTimeMission(
+        title: title,
+        startMinute: startMinute,
+        endMinute: endMinute,
+        targetMinutes: targetMinutes,
+        reminderEnabled: reminderEnabled,
+        groupId: groupId,
+      );
+      if (reminderEnabled) {
+        await LocalReminders.scheduleDaily(
+          id: DateTime.now().millisecondsSinceEpoch.remainder(100000),
+          title: title,
+          body: '시간대 미션이 시작됐습니다. 기록 탭에서 공부를 시작하세요.',
+          hour: startMinute ~/ 60,
+          minute: startMinute % 60,
+        );
+      }
       missionData = await api.getMissionData(selectedDate);
       notifyListeners();
     });

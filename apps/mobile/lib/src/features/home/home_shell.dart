@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/local_reminders.dart';
 import '../../state/app_controller.dart';
 import '../missions/missions_screen.dart';
 import '../settings/settings_screen.dart';
@@ -21,11 +22,31 @@ class _HomeShellState extends State<HomeShell> {
   int index = 0;
 
   @override
+  void initState() {
+    super.initState();
+    LocalReminders.listenForLaunchActions(_handleLaunchAction);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final action = await LocalReminders.consumeLaunchAction();
+      if (action != null) _handleLaunchAction(action);
+    });
+  }
+
+  void _handleLaunchAction(String action) {
+    if (!mounted) return;
+    if (action == 'start_study') {
+      setState(() => index = 1);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final screens = [
       DashboardScreen(controller: widget.controller),
       FocusTimerScreen(controller: widget.controller),
-      MissionsScreen(controller: widget.controller),
+      MissionsScreen(
+        controller: widget.controller,
+        onStartStudy: () => setState(() => index = 1),
+      ),
       StatsScreen(controller: widget.controller),
       SubjectsScreen(controller: widget.controller),
     ];

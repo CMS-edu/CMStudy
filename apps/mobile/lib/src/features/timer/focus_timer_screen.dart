@@ -435,6 +435,7 @@ Future<SessionReview?> showSessionReviewSheet(
   return showModalBottomSheet<SessionReview>(
     context: context,
     isScrollControlled: true,
+    requestFocus: false,
     builder: (context) {
       return _SessionReviewSheet(subject: subject, minutes: minutes);
     },

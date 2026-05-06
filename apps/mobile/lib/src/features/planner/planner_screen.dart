@@ -119,6 +119,7 @@ Future<void> _showTaskSheet(
   final draft = await showModalBottomSheet<_TaskDraft>(
     context: context,
     isScrollControlled: true,
+    requestFocus: false,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setModalState) {
@@ -165,7 +166,6 @@ Future<void> _showTaskSheet(
                     labelText: '공부할 내용',
                     border: OutlineInputBorder(),
                   ),
-                  autofocus: true,
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -220,7 +220,7 @@ Future<void> _showTaskSheet(
   ).whenComplete(titleController.dispose);
 
   if (draft == null) return;
-  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   await controller.createTask(
     subjectId: draft.subjectId,
     title: draft.title,

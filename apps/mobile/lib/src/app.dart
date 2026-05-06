@@ -15,40 +15,86 @@ class CmStudyApp extends StatefulWidget {
 
 class _CmStudyAppState extends State<CmStudyApp> {
   late final AppController controller;
+  late bool isInitialized;
+  late bool isAuthenticated;
+  late ThemeMode themeMode;
+  late CmThemePreset themePreset;
 
   @override
   void initState() {
     super.initState();
     controller = AppController(ApiClient());
+    isInitialized = controller.isInitialized;
+    isAuthenticated = controller.isAuthenticated;
+    themeMode = controller.themeMode;
+    themePreset = controller.themePreset;
+    controller.addListener(syncAppFrame);
     controller.restoreSession();
   }
 
   @override
   void dispose() {
+    controller.removeListener(syncAppFrame);
     controller.dispose();
     super.dispose();
   }
+
+  void syncAppFrame() {
+    final nextInitialized = controller.isInitialized;
+    final nextAuthenticated = controller.isAuthenticated;
+    final nextThemeMode = controller.themeMode;
+    final nextThemePreset = controller.themePreset;
+    if (nextInitialized == isInitialized &&
+        nextAuthenticated == isAuthenticated &&
+        nextThemeMode == themeMode &&
+        nextThemePreset == themePreset) {
+      return;
+    }
+    setState(() {
+      isInitialized = nextInitialized;
+      isAuthenticated = nextAuthenticated;
+      themeMode = nextThemeMode;
+      themePreset = nextThemePreset;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeProfile = cmThemeProfile(themePreset);
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'CMStudy',
+      themeMode: themeMode,
+      theme: buildCmStudyTheme(themeProfile, Brightness.light),
+      darkTheme: buildCmStudyTheme(themeProfile, Brightness.dark),
+      home: _ControllerHome(
+        controller: controller,
+        isAuthenticated: isAuthenticated,
+        isInitialized: isInitialized,
+      ),
+    );
+  }
+}
+
+class _ControllerHome extends StatelessWidget {
+  const _ControllerHome({
+    required this.controller,
+    required this.isAuthenticated,
+    required this.isInitialized,
+  });
+
+  final AppController controller;
+  final bool isAuthenticated;
+  final bool isInitialized;
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'CMStudy',
-          themeMode: controller.themeMode,
-          theme: buildCmStudyTheme(controller.themeProfile, Brightness.light),
-          darkTheme: buildCmStudyTheme(
-            controller.themeProfile,
-            Brightness.dark,
-          ),
-          home: controller.isAuthenticated
-              ? HomeShell(controller: controller)
-              : controller.isInitialized
-              ? LoginScreen(controller: controller)
-              : const _SplashScreen(),
-        );
+        if (!isInitialized) return const _SplashScreen();
+        if (isAuthenticated) return HomeShell(controller: controller);
+        return LoginScreen(controller: controller);
       },
     );
   }

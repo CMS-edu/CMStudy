@@ -198,6 +198,7 @@ Future<void> showSubjectSheet(
   final draft = await showModalBottomSheet<_SubjectDraft>(
     context: context,
     isScrollControlled: true,
+    requestFocus: false,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setModalState) {
@@ -222,7 +223,6 @@ Future<void> showSubjectSheet(
                 TextField(
                   controller: nameController,
                   decoration: const InputDecoration(labelText: '과목명'),
-                  autofocus: true,
                 ),
                 const SizedBox(height: 16),
                 const Text('색상', style: TextStyle(fontWeight: FontWeight.w900)),
@@ -297,7 +297,7 @@ Future<void> showSubjectSheet(
   ).whenComplete(nameController.dispose);
 
   if (draft == null) return;
-  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   if (subject == null) {
     await controller.createSubject(
       name: draft.name,

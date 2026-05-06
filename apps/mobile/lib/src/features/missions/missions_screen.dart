@@ -685,6 +685,80 @@ class _CreateGroupDraft {
   final int weeklyTargetMinutes;
 }
 
+class _CreateGroupSheet extends StatefulWidget {
+  const _CreateGroupSheet();
+
+  @override
+  State<_CreateGroupSheet> createState() => _CreateGroupSheetState();
+}
+
+class _CreateGroupSheetState extends State<_CreateGroupSheet> {
+  final nameController = TextEditingController(text: '새 미션 그룹');
+  int targetMinutes = 1800;
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        18,
+        8,
+        18,
+        MediaQuery.viewInsetsOf(context).bottom + 18,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '미션 그룹 만들기',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 16),
+          TextField(
+            controller: nameController,
+            decoration: const InputDecoration(labelText: '그룹 이름'),
+          ),
+          const SizedBox(height: 16),
+          Text('주간 그룹 목표 ${formatMinutes(targetMinutes)}'),
+          Slider(
+            value: targetMinutes.toDouble(),
+            min: 300,
+            max: 6000,
+            divisions: 19,
+            label: formatMinutes(targetMinutes),
+            onChanged: (value) {
+              setState(() => targetMinutes = value.round());
+            },
+          ),
+          const SizedBox(height: 10),
+          FilledButton.icon(
+            onPressed: submit,
+            icon: const Icon(Icons.group_add_outlined),
+            label: const Text('만들기'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void submit() {
+    final name = nameController.text.trim();
+    if (name.length < 2) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    Navigator.of(
+      context,
+    ).pop(_CreateGroupDraft(name: name, weeklyTargetMinutes: targetMinutes));
+  }
+}
+
 class _EmptyMissionCard extends StatelessWidget {
   const _EmptyMissionCard({required this.title, required this.message});
 
@@ -737,6 +811,7 @@ Future<void> showCreateTimeMissionSheet(
   final result = await showModalBottomSheet<_TimeMissionDraft>(
     context: context,
     isScrollControlled: true,
+    requestFocus: false,
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setModalState) {
@@ -777,7 +852,6 @@ Future<void> showCreateTimeMissionSheet(
                 TextField(
                   controller: titleController,
                   decoration: const InputDecoration(labelText: '미션 이름'),
-                  autofocus: true,
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -867,7 +941,7 @@ Future<void> showCreateTimeMissionSheet(
   ).whenComplete(titleController.dispose);
 
   if (result == null) return;
-  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   await controller.createTimeMission(
     title: result.title,
     startMinute: result.startMinute,
@@ -882,75 +956,17 @@ Future<void> showCreateGroupSheet(
   BuildContext context,
   AppController controller,
 ) async {
-  final nameController = TextEditingController(text: '새 미션 그룹');
-  var targetMinutes = 1800;
   final result = await showModalBottomSheet<_CreateGroupDraft>(
     context: context,
     isScrollControlled: true,
-    builder: (context) {
-      return StatefulBuilder(
-        builder: (context, setModalState) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              18,
-              18,
-              18,
-              MediaQuery.viewInsetsOf(context).bottom + 18,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  '미션 그룹 만들기',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(labelText: '그룹 이름'),
-                  autofocus: true,
-                ),
-                const SizedBox(height: 16),
-                Text('주간 그룹 목표 ${formatMinutes(targetMinutes)}'),
-                Slider(
-                  value: targetMinutes.toDouble(),
-                  min: 300,
-                  max: 6000,
-                  divisions: 19,
-                  label: formatMinutes(targetMinutes),
-                  onChanged: (value) {
-                    setModalState(() => targetMinutes = value.round());
-                  },
-                ),
-                const SizedBox(height: 10),
-                FilledButton.icon(
-                  onPressed: () {
-                    final name = nameController.text.trim();
-                    if (name.length < 2) return;
-                    Navigator.pop(
-                      context,
-                      _CreateGroupDraft(
-                        name: name,
-                        weeklyTargetMinutes: targetMinutes,
-                      ),
-                    );
-                  },
-                  icon: const Icon(Icons.group_add_outlined),
-                  label: const Text('만들기'),
-                ),
-              ],
-            ),
-          );
-        },
-      );
-    },
-  ).whenComplete(nameController.dispose);
+    useSafeArea: true,
+    showDragHandle: true,
+    requestFocus: false,
+    builder: (_) => const _CreateGroupSheet(),
+  );
 
   if (result == null) return;
-  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   await controller.createMissionGroup(
     name: result.name,
     weeklyTargetMinutes: result.weeklyTargetMinutes,
@@ -965,6 +981,7 @@ Future<void> showJoinGroupSheet(
   final inviteCode = await showModalBottomSheet<String>(
     context: context,
     isScrollControlled: true,
+    requestFocus: false,
     builder: (context) {
       return Padding(
         padding: EdgeInsets.fromLTRB(
@@ -988,7 +1005,6 @@ Future<void> showJoinGroupSheet(
               controller: codeController,
               decoration: const InputDecoration(labelText: '초대 코드'),
               textCapitalization: TextCapitalization.characters,
-              autofocus: true,
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
@@ -1007,7 +1023,7 @@ Future<void> showJoinGroupSheet(
   ).whenComplete(codeController.dispose);
 
   if (inviteCode == null) return;
-  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await Future<void>.delayed(const Duration(milliseconds: 300));
   await controller.joinMissionGroup(inviteCode);
 }
 

@@ -41,9 +41,11 @@ class AppController extends ChangeNotifier {
 
   bool get isAuthenticated => user != null && api.token != null;
 
-  CmThemeProfile get themeProfile => cmThemeProfile(themePreset);
+  CmThemeProfile get themeProfile {
+    return cmThemeProfile(themePreset).copyWith(seedColor: accentColor);
+  }
 
-  Color get accentColor => themeProfile.seedColor;
+  Color get accentColor => Color(accentColorValue);
 
   int get openTaskCount => tasks.where((task) => !task.isDone).length;
 

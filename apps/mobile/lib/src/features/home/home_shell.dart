@@ -53,11 +53,34 @@ class _HomeShellState extends State<HomeShell> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('CMStudy'),
+        titleSpacing: 16,
+        title: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Theme.of(context).colorScheme.primary.withAlpha(24),
+                border: Border.all(
+                  color: Theme.of(context).colorScheme.primary.withAlpha(60),
+                ),
+              ),
+              child: Icon(
+                Icons.bolt_outlined,
+                size: 18,
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Text('CMStudy'),
+          ],
+        ),
         actions: [
           IconButton(
             onPressed: widget.controller.loadDashboard,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.sync_outlined),
             tooltip: '새로고침',
           ),
           IconButton(

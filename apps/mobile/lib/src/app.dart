@@ -19,6 +19,7 @@ class _CmStudyAppState extends State<CmStudyApp> {
   late bool isAuthenticated;
   late ThemeMode themeMode;
   late CmThemePreset themePreset;
+  late int accentColorValue;
 
   @override
   void initState() {
@@ -28,6 +29,7 @@ class _CmStudyAppState extends State<CmStudyApp> {
     isAuthenticated = controller.isAuthenticated;
     themeMode = controller.themeMode;
     themePreset = controller.themePreset;
+    accentColorValue = controller.accentColorValue;
     controller.addListener(syncAppFrame);
     controller.restoreSession();
   }
@@ -44,10 +46,12 @@ class _CmStudyAppState extends State<CmStudyApp> {
     final nextAuthenticated = controller.isAuthenticated;
     final nextThemeMode = controller.themeMode;
     final nextThemePreset = controller.themePreset;
+    final nextAccentColorValue = controller.accentColorValue;
     if (nextInitialized == isInitialized &&
         nextAuthenticated == isAuthenticated &&
         nextThemeMode == themeMode &&
-        nextThemePreset == themePreset) {
+        nextThemePreset == themePreset &&
+        nextAccentColorValue == accentColorValue) {
       return;
     }
     setState(() {
@@ -55,12 +59,15 @@ class _CmStudyAppState extends State<CmStudyApp> {
       isAuthenticated = nextAuthenticated;
       themeMode = nextThemeMode;
       themePreset = nextThemePreset;
+      accentColorValue = nextAccentColorValue;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final themeProfile = cmThemeProfile(themePreset);
+    final themeProfile = cmThemeProfile(
+      themePreset,
+    ).copyWith(seedColor: Color(accentColorValue));
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'CMStudy',

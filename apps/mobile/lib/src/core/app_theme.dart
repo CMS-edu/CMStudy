@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-enum CmThemePreset { graphite, forest, dawn, ink }
+enum CmThemePreset { graphite, forest, dawn, ink, studio, marine }
 
 class CmThemeProfile {
   const CmThemeProfile({
@@ -8,6 +8,8 @@ class CmThemeProfile {
     required this.label,
     required this.description,
     required this.seedColor,
+    required this.secondaryColor,
+    required this.tertiaryColor,
     required this.lightBackground,
     required this.darkBackground,
     required this.lightSurface,
@@ -18,52 +20,111 @@ class CmThemeProfile {
   final String label;
   final String description;
   final Color seedColor;
+  final Color secondaryColor;
+  final Color tertiaryColor;
   final Color lightBackground;
   final Color darkBackground;
   final Color lightSurface;
   final Color darkSurface;
+
+  CmThemeProfile copyWith({
+    String? label,
+    String? description,
+    Color? seedColor,
+    Color? secondaryColor,
+    Color? tertiaryColor,
+    Color? lightBackground,
+    Color? darkBackground,
+    Color? lightSurface,
+    Color? darkSurface,
+  }) {
+    return CmThemeProfile(
+      preset: preset,
+      label: label ?? this.label,
+      description: description ?? this.description,
+      seedColor: seedColor ?? this.seedColor,
+      secondaryColor: secondaryColor ?? this.secondaryColor,
+      tertiaryColor: tertiaryColor ?? this.tertiaryColor,
+      lightBackground: lightBackground ?? this.lightBackground,
+      darkBackground: darkBackground ?? this.darkBackground,
+      lightSurface: lightSurface ?? this.lightSurface,
+      darkSurface: darkSurface ?? this.darkSurface,
+    );
+  }
 }
 
 const cmThemeProfiles = [
   CmThemeProfile(
     preset: CmThemePreset.graphite,
     label: '그래파이트',
-    description: '차분한 기본 업무형 테마',
-    seedColor: Color(0xFF2563EB),
-    lightBackground: Color(0xFFF5F7FB),
-    darkBackground: Color(0xFF0B1120),
+    description: '가장 균형 잡힌 기본 집중 테마',
+    seedColor: Color(0xFF2557D6),
+    secondaryColor: Color(0xFF0F766E),
+    tertiaryColor: Color(0xFFB45309),
+    lightBackground: Color(0xFFF4F7FB),
+    darkBackground: Color(0xFF0A0F1C),
     lightSurface: Color(0xFFFFFFFF),
     darkSurface: Color(0xFF111827),
   ),
   CmThemeProfile(
     preset: CmThemePreset.forest,
     label: '포레스트',
-    description: '눈이 편한 녹색 집중 테마',
-    seedColor: Color(0xFF059669),
-    lightBackground: Color(0xFFF3F8F6),
-    darkBackground: Color(0xFF071A16),
+    description: '장시간 기록에 편한 저자극 테마',
+    seedColor: Color(0xFF047857),
+    secondaryColor: Color(0xFF2563EB),
+    tertiaryColor: Color(0xFFCA8A04),
+    lightBackground: Color(0xFFF2F8F5),
+    darkBackground: Color(0xFF071713),
     lightSurface: Color(0xFFFFFFFF),
     darkSurface: Color(0xFF10201C),
   ),
   CmThemeProfile(
     preset: CmThemePreset.dawn,
     label: '던',
-    description: '따뜻하지만 과하지 않은 테마',
-    seedColor: Color(0xFFEA580C),
-    lightBackground: Color(0xFFFAF7F2),
-    darkBackground: Color(0xFF1B1110),
+    description: '아침 공부에 어울리는 따뜻한 테마',
+    seedColor: Color(0xFFD97706),
+    secondaryColor: Color(0xFF0E7490),
+    tertiaryColor: Color(0xFFBE123C),
+    lightBackground: Color(0xFFFAF6EE),
+    darkBackground: Color(0xFF1B120C),
     lightSurface: Color(0xFFFFFFFF),
-    darkSurface: Color(0xFF211817),
+    darkSurface: Color(0xFF231A13),
   ),
   CmThemeProfile(
     preset: CmThemePreset.ink,
     label: '잉크',
-    description: '고대비 다크 중심 테마',
-    seedColor: Color(0xFF0891B2),
-    lightBackground: Color(0xFFF4F8FA),
+    description: '어두운 환경에서 또렷한 테마',
+    seedColor: Color(0xFF0E7490),
+    secondaryColor: Color(0xFF7C3AED),
+    tertiaryColor: Color(0xFF16A34A),
+    lightBackground: Color(0xFFF3F8FA),
     darkBackground: Color(0xFF06131A),
     lightSurface: Color(0xFFFFFFFF),
     darkSurface: Color(0xFF0D1B24),
+  ),
+  CmThemeProfile(
+    preset: CmThemePreset.studio,
+    label: '스튜디오',
+    description: '선명한 대비의 생산성 테마',
+    seedColor: Color(0xFF4F46E5),
+    secondaryColor: Color(0xFF0F766E),
+    tertiaryColor: Color(0xFFDC2626),
+    lightBackground: Color(0xFFF6F7FB),
+    darkBackground: Color(0xFF0C0E1A),
+    lightSurface: Color(0xFFFFFFFF),
+    darkSurface: Color(0xFF151827),
+  ),
+  CmThemeProfile(
+    preset: CmThemePreset.marine,
+    label: '마린',
+    description: '차갑고 깨끗한 분석 중심 테마',
+    seedColor: Color(0xFF0369A1),
+    secondaryColor: Color(0xFF059669),
+    tertiaryColor: Color(0xFF9333EA),
+    lightBackground: Color(0xFFF2F7FA),
+    darkBackground: Color(0xFF07121D),
+    lightSurface: Color(0xFFFFFFFF),
+    darkSurface: Color(0xFF0E1B2A),
   ),
 ];
 
@@ -80,28 +141,48 @@ CmThemeProfile cmThemeProfile(CmThemePreset preset) {
 
 ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
   final isDark = brightness == Brightness.dark;
-  final scheme = ColorScheme.fromSeed(
+  final generatedScheme = ColorScheme.fromSeed(
     seedColor: profile.seedColor,
     brightness: brightness,
   );
   final background = isDark ? profile.darkBackground : profile.lightBackground;
   final surface = isDark ? profile.darkSurface : profile.lightSurface;
-  final outline = isDark ? const Color(0xFF263247) : const Color(0xFFE0E7EF);
+  final elevatedSurface = isDark
+      ? Color.alphaBlend(Colors.white.withAlpha(10), surface)
+      : Color.alphaBlend(profile.seedColor.withAlpha(8), surface);
+  final outline = isDark ? const Color(0xFF29364B) : const Color(0xFFDCE4EE);
+  final subtleFill = isDark
+      ? const Color(0xFF0E1626)
+      : Color.alphaBlend(profile.seedColor.withAlpha(7), Colors.white);
+  final scheme = generatedScheme.copyWith(
+    primary: profile.seedColor,
+    secondary: profile.secondaryColor,
+    tertiary: profile.tertiaryColor,
+    surface: surface,
+    outline: outline,
+    outlineVariant: outline.withAlpha(isDark ? 150 : 210),
+  );
 
   return ThemeData(
     useMaterial3: true,
+    brightness: brightness,
     colorScheme: scheme,
     scaffoldBackgroundColor: background,
     visualDensity: VisualDensity.standard,
+    textTheme: Typography.material2021().black.apply(
+      bodyColor: isDark ? const Color(0xFFE5E7EB) : const Color(0xFF111827),
+      displayColor: isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A),
+    ),
     appBarTheme: AppBarTheme(
       centerTitle: false,
-      backgroundColor: background,
+      backgroundColor: background.withAlpha(isDark ? 242 : 248),
       foregroundColor: scheme.onSurface,
       elevation: 0,
       surfaceTintColor: Colors.transparent,
+      scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
         color: scheme.onSurface,
-        fontSize: 20,
+        fontSize: 19,
         fontWeight: FontWeight.w900,
       ),
     ),
@@ -112,13 +193,15 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: outline),
+        side: BorderSide(color: outline.withAlpha(isDark ? 180 : 235)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       elevation: 0,
       backgroundColor: surface,
-      indicatorColor: scheme.primaryContainer,
+      indicatorColor: profile.seedColor.withAlpha(isDark ? 42 : 30),
+      surfaceTintColor: Colors.transparent,
+      height: 70,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
         return TextStyle(
           fontSize: 12,
@@ -135,6 +218,12 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
         textStyle: const TextStyle(fontWeight: FontWeight.w900),
       ),
     ),
+    textButtonTheme: TextButtonThemeData(
+      style: TextButton.styleFrom(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        textStyle: const TextStyle(fontWeight: FontWeight.w900),
+      ),
+    ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(48, 46),
@@ -145,7 +234,7 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: isDark ? const Color(0xFF0F172A) : const Color(0xFFF8FAFC),
+      fillColor: subtleFill,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -155,13 +244,54 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
         borderRadius: BorderRadius.circular(8),
         borderSide: BorderSide(color: scheme.primary, width: 1.6),
       ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+      labelStyle: TextStyle(color: scheme.onSurfaceVariant),
     ),
     chipTheme: ChipThemeData(
+      backgroundColor: elevatedSurface,
+      selectedColor: profile.seedColor.withAlpha(isDark ? 50 : 28),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       side: BorderSide(color: outline),
       labelStyle: const TextStyle(fontWeight: FontWeight.w800),
     ),
     dividerTheme: DividerThemeData(color: outline),
+    switchTheme: SwitchThemeData(
+      thumbColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) return profile.seedColor;
+        return isDark ? const Color(0xFFCBD5E1) : const Color(0xFF64748B);
+      }),
+      trackColor: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return profile.seedColor.withAlpha(isDark ? 80 : 58);
+        }
+        return outline.withAlpha(isDark ? 90 : 150);
+      }),
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return profile.seedColor.withAlpha(isDark ? 44 : 24);
+          }
+          return Colors.transparent;
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return profile.seedColor;
+          return scheme.onSurfaceVariant;
+        }),
+        side: WidgetStatePropertyAll(BorderSide(color: outline)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        textStyle: const WidgetStatePropertyAll(
+          TextStyle(fontWeight: FontWeight.w900),
+        ),
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: profile.seedColor,
+      linearTrackColor: outline.withAlpha(isDark ? 70 : 115),
+    ),
     listTileTheme: const ListTileThemeData(
       contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       titleTextStyle: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),

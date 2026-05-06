@@ -14,85 +14,76 @@ class SettingsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('설정')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 18),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 22),
         children: [
+          _AppearancePreview(controller: controller),
+          const SizedBox(height: 14),
           _SectionCard(
+            icon: Icons.contrast_outlined,
             title: '화면 모드',
-            subtitle: '앱 전체의 밝기와 기본 분위기를 정합니다.',
+            subtitle: '밝기 기준을 선택합니다.',
             children: [
-              SegmentedButton<ThemeMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: ThemeMode.system,
-                    label: Text('시스템'),
-                    icon: Icon(Icons.settings_suggest_outlined),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.light,
-                    label: Text('라이트'),
-                    icon: Icon(Icons.light_mode_outlined),
-                  ),
-                  ButtonSegment(
-                    value: ThemeMode.dark,
-                    label: Text('다크'),
-                    icon: Icon(Icons.dark_mode_outlined),
-                  ),
-                ],
-                selected: {controller.themeMode},
-                onSelectionChanged: (value) {
-                  controller.setThemeMode(value.first);
-                },
+              _ThemeModeSelector(
+                selected: controller.themeMode,
+                onChanged: controller.setThemeMode,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _SectionCard(
+            icon: Icons.palette_outlined,
             title: '테마 프리셋',
-            subtitle: '색상, 표면 톤, 강조색을 한 번에 바꿉니다.',
+            subtitle: '앱 전체 색감과 표면 톤을 바꿉니다.',
             children: [
-              ...cmThemeProfiles.map(
-                (profile) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: _ThemePresetTile(
-                    profile: profile,
-                    selected: controller.themePreset == profile.preset,
-                    onTap: () => controller.setThemePreset(profile.preset),
-                  ),
-                ),
+              _ThemePresetGrid(
+                selected: controller.themePreset,
+                onChanged: controller.setThemePreset,
+              ),
+              const SizedBox(height: 16),
+              _AccentColorPicker(
+                selected: controller.accentColor,
+                profile: controller.themeProfile,
+                onChanged: controller.setAccentColor,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _SectionCard(
-            title: '기록 화면',
-            subtitle: '홈과 분석 화면에 표시할 정보량을 조절합니다.',
+            icon: Icons.tune_outlined,
+            title: '커스터마이즈',
+            subtitle: '기록 화면의 밀도와 장식을 조절합니다.',
             children: [
               _SettingSwitchTile(
-                title: '이미지 표시',
+                icon: Icons.image_outlined,
+                title: '이미지 사용',
                 subtitle: '로그인, 빈 화면, 스탑워치 일러스트를 표시합니다.',
                 value: controller.showImages,
                 onChanged: controller.setShowImages,
               ),
               _SettingSwitchTile(
-                title: '작전판에 계획 표시',
-                subtitle: '계획 기능을 쓰는 경우 홈 하단에 오늘 계획을 보여줍니다.',
+                icon: Icons.dashboard_customize_outlined,
+                title: '홈에 계획 표시',
+                subtitle: '작전판 하단에 오늘 계획을 함께 보여줍니다.',
                 value: controller.showPlansOnHome,
                 onChanged: controller.setShowPlansOnHome,
               ),
               _SettingSwitchTile(
-                title: '분석 정보 촘촘히 보기',
-                subtitle: '통계 화면에서 보조 지표와 분석 메모를 더 자세히 표시합니다.',
+                icon: Icons.stacked_line_chart_outlined,
+                title: '통계 자세히 보기',
+                subtitle: '분석 화면에서 보조 지표와 메모를 더 촘촘히 표시합니다.',
                 value: controller.denseStats,
                 onChanged: controller.setDenseStats,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _SectionCard(
+            icon: Icons.rule_outlined,
             title: '공부 기준',
-            subtitle: '과목 목표를 바탕으로 추천과 밸런스 점수가 계산됩니다.',
+            subtitle: '현재 설정된 목표와 저장 방식을 확인합니다.',
             children: [
               _InfoRow(
+                icon: Icons.track_changes_outlined,
                 label: '오늘 목표',
                 value: formatMinutes(
                   controller.subjects.fold<int>(
@@ -102,21 +93,26 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 10),
-              const _InfoRow(label: '세션 저장', value: '1분 단위 반올림'),
+              const _InfoRow(
+                icon: Icons.timer_outlined,
+                label: '세션 저장',
+                value: '1분 단위',
+              ),
               const SizedBox(height: 10),
-              const _InfoRow(label: '동기화', value: 'Render 서버 자동 저장'),
+              const _InfoRow(
+                icon: Icons.cloud_done_outlined,
+                label: '동기화',
+                value: '서버 자동 저장',
+              ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           _SectionCard(
+            icon: Icons.person_outline,
             title: '계정',
             children: [
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.person_outline),
-                title: Text(controller.user?.nickname ?? '사용자'),
-                subtitle: Text(controller.user?.email ?? ''),
-              ),
+              _AccountPanel(controller: controller),
+              const SizedBox(height: 12),
               FilledButton.icon(
                 onPressed: controller.logout,
                 icon: const Icon(Icons.logout),
@@ -130,43 +126,262 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class _SettingSwitchTile extends StatelessWidget {
-  const _SettingSwitchTile({
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
+class _AppearancePreview extends StatelessWidget {
+  const _AppearancePreview({required this.controller});
 
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
+  final AppController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 4),
-                Text(subtitle, style: const TextStyle(color: Colors.blueGrey)),
-              ],
+    final profile = controller.themeProfile;
+    final scheme = Theme.of(context).colorScheme;
+    final targetMinutes = controller.subjects.fold<int>(
+      0,
+      (sum, subject) => sum + subject.targetMinutesPerDay,
+    );
+    final progress = targetMinutes == 0
+        ? 0.0
+        : (controller.stats.focusedToday / targetMinutes).clamp(0.0, 1.0);
+
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: scheme.outlineVariant),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(profile.seedColor.withAlpha(32), scheme.surface),
+            Color.alphaBlend(
+              profile.secondaryColor.withAlpha(22),
+              scheme.surface,
             ),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              _ThemeMark(profile: profile, size: 52),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${profile.label} 테마',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      themeModeLabel(controller.themeMode),
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.auto_awesome_outlined, color: profile.tertiaryColor),
+            ],
           ),
-          const SizedBox(width: 12),
-          Switch(value: value, onChanged: onChanged),
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(value: progress, minHeight: 9),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _PreviewChip(
+                color: profile.seedColor,
+                label: '오늘 ${formatMinutes(controller.stats.focusedToday)}',
+              ),
+              _PreviewChip(
+                color: profile.secondaryColor,
+                label: '과목 ${controller.subjects.length}개',
+              ),
+              _PreviewChip(
+                color: profile.tertiaryColor,
+                label: '계획 ${controller.openTaskCount}개',
+              ),
+            ],
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _AccentColorPicker extends StatelessWidget {
+  const _AccentColorPicker({
+    required this.selected,
+    required this.profile,
+    required this.onChanged,
+  });
+
+  final Color selected;
+  final CmThemeProfile profile;
+  final ValueChanged<Color> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = [
+      profile.seedColor,
+      profile.secondaryColor,
+      profile.tertiaryColor,
+      const Color(0xFF2563EB),
+      const Color(0xFF059669),
+      const Color(0xFFD97706),
+      const Color(0xFFDC2626),
+      const Color(0xFF7C3AED),
+      const Color(0xFF0E7490),
+      const Color(0xFF334155),
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '강조색',
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w900),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 9,
+          runSpacing: 9,
+          children: [
+            for (final color in colors)
+              _AccentSwatch(
+                color: color,
+                selected: color.toARGB32() == selected.toARGB32(),
+                onTap: () => onChanged(color),
+              ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _AccentSwatch extends StatelessWidget {
+  const _AccentSwatch({
+    required this.color,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: '강조색 선택',
+      child: InkWell(
+        onTap: onTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 38,
+          height: 38,
+          padding: const EdgeInsets.all(3),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: selected
+                  ? Theme.of(context).colorScheme.onSurface
+                  : Theme.of(context).colorScheme.outlineVariant,
+              width: selected ? 2 : 1,
+            ),
+          ),
+          child: DecoratedBox(
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+            child: selected
+                ? const Icon(Icons.check, color: Colors.white, size: 18)
+                : null,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ThemeModeSelector extends StatelessWidget {
+  const _ThemeModeSelector({required this.selected, required this.onChanged});
+
+  final ThemeMode selected;
+  final ValueChanged<ThemeMode> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<ThemeMode>(
+        showSelectedIcon: false,
+        segments: const [
+          ButtonSegment(
+            value: ThemeMode.system,
+            label: Text('시스템'),
+            icon: Icon(Icons.settings_suggest_outlined),
+          ),
+          ButtonSegment(
+            value: ThemeMode.light,
+            label: Text('라이트'),
+            icon: Icon(Icons.light_mode_outlined),
+          ),
+          ButtonSegment(
+            value: ThemeMode.dark,
+            label: Text('다크'),
+            icon: Icon(Icons.dark_mode_outlined),
+          ),
+        ],
+        selected: {selected},
+        onSelectionChanged: (value) => onChanged(value.first),
+      ),
+    );
+  }
+}
+
+class _ThemePresetGrid extends StatelessWidget {
+  const _ThemePresetGrid({required this.selected, required this.onChanged});
+
+  final CmThemePreset selected;
+  final ValueChanged<CmThemePreset> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 360;
+        final tileWidth = compact
+            ? constraints.maxWidth
+            : (constraints.maxWidth - 10) / 2;
+        return Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: [
+            for (final profile in cmThemeProfiles)
+              SizedBox(
+                width: tileWidth,
+                child: _ThemePresetTile(
+                  profile: profile,
+                  selected: selected == profile.preset,
+                  onTap: () => onChanged(profile.preset),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }
@@ -184,79 +399,96 @@ class _ThemePresetTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outlineVariant,
-            width: selected ? 1.6 : 1,
-          ),
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: selected
+          ? profile.seedColor.withAlpha(
+              Theme.of(context).brightness == Brightness.dark ? 34 : 18,
+            )
+          : scheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(
+          color: selected ? profile.seedColor : scheme.outlineVariant,
+          width: selected ? 1.7 : 1,
         ),
-        child: Row(
-          children: [
-            _ThemeSwatch(profile: profile),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.all(13),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 children: [
-                  Text(
-                    profile.label,
-                    style: const TextStyle(fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    profile.description,
-                    style: const TextStyle(color: Colors.blueGrey),
+                  _ThemeMark(profile: profile, size: 36),
+                  const Spacer(),
+                  Icon(
+                    selected
+                        ? Icons.check_circle
+                        : themePresetIcon(profile.preset),
+                    color: selected
+                        ? profile.seedColor
+                        : scheme.onSurfaceVariant,
+                    size: selected ? 22 : 20,
                   ),
                 ],
               ),
-            ),
-            if (selected) const Icon(Icons.check_circle),
-          ],
+              const SizedBox(height: 12),
+              Text(
+                profile.label,
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                profile.description,
+                style: TextStyle(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _ThemeSwatch extends StatelessWidget {
-  const _ThemeSwatch({required this.profile});
+class _ThemeMark extends StatelessWidget {
+  const _ThemeMark({required this.profile, required this.size});
 
   final CmThemeProfile profile;
+  final double size;
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: 54,
-      height: 34,
+    return Container(
+      width: size,
+      height: size,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: Theme.of(context).colorScheme.surface,
+        border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
+      ),
       child: Row(
         children: [
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: profile.seedColor,
-                borderRadius: const BorderRadius.horizontal(
-                  left: Radius.circular(7),
-                ),
-              ),
+            flex: 3,
+            child: _ColorBlock(
+              color: profile.seedColor,
+              radius: const BorderRadius.horizontal(left: Radius.circular(5)),
             ),
           ),
-          Expanded(child: Container(color: profile.lightBackground)),
+          Expanded(flex: 2, child: _ColorBlock(color: profile.secondaryColor)),
           Expanded(
-            child: Container(
-              decoration: BoxDecoration(
-                color: profile.darkSurface,
-                borderRadius: const BorderRadius.horizontal(
-                  right: Radius.circular(7),
-                ),
-              ),
+            flex: 2,
+            child: _ColorBlock(
+              color: profile.tertiaryColor,
+              radius: const BorderRadius.horizontal(right: Radius.circular(5)),
             ),
           ),
         ],
@@ -265,59 +497,290 @@ class _ThemeSwatch extends StatelessWidget {
   }
 }
 
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.children,
-    this.subtitle,
-  });
+class _ColorBlock extends StatelessWidget {
+  const _ColorBlock({required this.color, this.radius = BorderRadius.zero});
 
-  final String title;
-  final String? subtitle;
-  final List<Widget> children;
+  final Color color;
+  final BorderRadius radius;
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              title,
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w900),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
-              Text(subtitle!, style: const TextStyle(color: Colors.blueGrey)),
+    return Container(
+      decoration: BoxDecoration(color: color, borderRadius: radius),
+    );
+  }
+}
+
+class _PreviewChip extends StatelessWidget {
+  const _PreviewChip({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: color.withAlpha(
+          Theme.of(context).brightness == Brightness.dark ? 42 : 24,
+        ),
+        border: Border.all(color: color.withAlpha(90)),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontWeight: FontWeight.w900),
+      ),
+    );
+  }
+}
+
+class _SettingSwitchTile extends StatelessWidget {
+  const _SettingSwitchTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => onChanged(!value),
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 38,
+                height: 38,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: scheme.primary.withAlpha(
+                    Theme.of(context).brightness == Brightness.dark ? 32 : 18,
+                  ),
+                ),
+                child: Icon(icon, size: 20, color: scheme.primary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Switch(value: value, onChanged: onChanged),
             ],
-            const SizedBox(height: 14),
-            ...children,
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.icon,
+    required this.title,
+    required this.children,
+    this.subtitle,
+  });
 
+  final IconData icon;
+  final String title;
+  final String? subtitle;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: scheme.surface,
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: scheme.primary, size: 22),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle!,
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
   final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(label, style: const TextStyle(color: Colors.blueGrey)),
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: scheme.surfaceContainerHighest.withAlpha(
+          Theme.of(context).brightness == Brightness.dark ? 120 : 140,
         ),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
-      ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: scheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                color: scheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w900)),
+        ],
+      ),
     );
   }
+}
+
+class _AccountPanel extends StatelessWidget {
+  const _AccountPanel({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final name = controller.user?.nickname ?? '사용자';
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: scheme.primary.withAlpha(
+          Theme.of(context).brightness == Brightness.dark ? 30 : 16,
+        ),
+        border: Border.all(color: scheme.primary.withAlpha(58)),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            backgroundColor: scheme.primary,
+            child: Text(
+              name.characters.first,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: const TextStyle(fontWeight: FontWeight.w900)),
+                const SizedBox(height: 3),
+                Text(
+                  controller.user?.email ?? '',
+                  style: TextStyle(
+                    color: scheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String themeModeLabel(ThemeMode mode) {
+  return switch (mode) {
+    ThemeMode.light => '라이트 모드',
+    ThemeMode.dark => '다크 모드',
+    ThemeMode.system => '시스템 설정 사용',
+  };
+}
+
+IconData themePresetIcon(CmThemePreset preset) {
+  return switch (preset) {
+    CmThemePreset.graphite => Icons.view_week_outlined,
+    CmThemePreset.forest => Icons.eco_outlined,
+    CmThemePreset.dawn => Icons.wb_twilight_outlined,
+    CmThemePreset.ink => Icons.dark_mode_outlined,
+    CmThemePreset.studio => Icons.auto_awesome_outlined,
+    CmThemePreset.marine => Icons.water_drop_outlined,
+  };
 }

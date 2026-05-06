@@ -145,63 +145,107 @@ class _CommandHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final profile = controller.themeProfile;
     final progress = (snapshot.targetRate / 100).clamp(0.0, 1.0);
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: scheme.primaryContainer.withAlpha(150),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: scheme.primary.withAlpha(42)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '${controller.user?.nickname ?? '사용자'}님의 오늘 작전',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final showArtwork =
+            controller.showImages && constraints.maxWidth >= 350;
+        return Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: scheme.primary.withAlpha(48)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  profile.seedColor.withAlpha(34),
+                  scheme.surface,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  snapshot.dailyTarget == 0
-                      ? '과목 목표를 설정하면 오늘의 추천 루틴이 만들어집니다.'
-                      : '목표 ${formatMinutes(snapshot.dailyTarget)} 중 ${formatMinutes(snapshot.todayMinutes)} 진행',
-                  style: TextStyle(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 14),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(999),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 9,
-                    backgroundColor: scheme.surface.withAlpha(150),
-                  ),
+                Color.alphaBlend(
+                  profile.secondaryColor.withAlpha(22),
+                  scheme.surface,
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-          if (controller.showImages)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8),
-              child: Image.asset(
-                AppAssets.focusTimer,
-                width: 84,
-                height: 84,
-                fit: BoxFit.cover,
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: profile.seedColor.withAlpha(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? 42
+                              : 24,
+                        ),
+                      ),
+                      child: Text(
+                        '오늘 진행률 ${snapshot.targetRate.clamp(0, 999)}%',
+                        style: TextStyle(
+                          color: profile.seedColor,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${controller.user?.nickname ?? '사용자'}님의 오늘 작전',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      snapshot.dailyTarget == 0
+                          ? '과목 목표를 설정하면 오늘의 추천 루틴이 만들어집니다.'
+                          : '목표 ${formatMinutes(snapshot.dailyTarget)} 중 ${formatMinutes(snapshot.todayMinutes)} 진행',
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 9,
+                        backgroundColor: scheme.surface.withAlpha(150),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            )
-          else
-            _GradeBadge(grade: snapshot.grade),
-        ],
-      ),
+              if (showArtwork) ...[
+                const SizedBox(width: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    AppAssets.focusTimer,
+                    width: 92,
+                    height: 92,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(width: 14),
+                _GradeBadge(grade: snapshot.grade),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -286,12 +330,24 @@ class _MetricTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(13),
         child: Row(
           children: [
-            Icon(icon, color: Theme.of(context).colorScheme.primary),
+            Container(
+              width: 36,
+              height: 36,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: scheme.primary.withAlpha(
+                  Theme.of(context).brightness == Brightness.dark ? 34 : 18,
+                ),
+              ),
+              child: Icon(icon, color: scheme.primary, size: 20),
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Column(

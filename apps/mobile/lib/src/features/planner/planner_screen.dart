@@ -108,12 +108,15 @@ class PlannerScreen extends StatelessWidget {
   }
 }
 
-Future<void> _showTaskSheet(BuildContext context, AppController controller) {
+Future<void> _showTaskSheet(
+  BuildContext context,
+  AppController controller,
+) async {
   final titleController = TextEditingController();
   var subjectId = controller.subjects.first.id;
   var minutes = 60;
 
-  return showModalBottomSheet<void>(
+  final draft = await showModalBottomSheet<_TaskDraft>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -191,16 +194,17 @@ Future<void> _showTaskSheet(BuildContext context, AppController controller) {
                 ),
                 const SizedBox(height: 10),
                 FilledButton(
-                  onPressed: () async {
+                  onPressed: () {
                     final title = titleController.text.trim();
                     if (title.isEmpty) return;
-                    await controller.createTask(
-                      subjectId: subjectId,
-                      title: title,
-                      plannedMinutes: minutes,
-                      plannedDate: controller.selectedDate,
+                    Navigator.pop(
+                      context,
+                      _TaskDraft(
+                        subjectId: subjectId,
+                        title: title,
+                        minutes: minutes,
+                      ),
                     );
-                    if (context.mounted) Navigator.pop(context);
                   },
                   child: const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
@@ -213,7 +217,28 @@ Future<void> _showTaskSheet(BuildContext context, AppController controller) {
         },
       );
     },
+  ).whenComplete(titleController.dispose);
+
+  if (draft == null) return;
+  await Future<void>.delayed(const Duration(milliseconds: 80));
+  await controller.createTask(
+    subjectId: draft.subjectId,
+    title: draft.title,
+    plannedMinutes: draft.minutes,
+    plannedDate: controller.selectedDate,
   );
+}
+
+class _TaskDraft {
+  const _TaskDraft({
+    required this.subjectId,
+    required this.title,
+    required this.minutes,
+  });
+
+  final String subjectId;
+  final String title;
+  final int minutes;
 }
 
 Future<void> _changeDate(AppController controller, int delta) {

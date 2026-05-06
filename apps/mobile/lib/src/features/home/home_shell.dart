@@ -73,7 +73,7 @@ class _HomeShellState extends State<HomeShell> {
           ),
         ],
       ),
-      body: screens[index],
+      body: IndexedStack(index: index, children: screens),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: (value) => setState(() => index = value),

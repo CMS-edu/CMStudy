@@ -13,11 +13,11 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController(text: 'demo@cmstudy.app');
   final passwordController = TextEditingController(text: 'password123');
   final nicknameController = TextEditingController(text: '민서');
   bool isRegister = false;
+  String? formError;
 
   @override
   void dispose() {
@@ -68,82 +68,67 @@ class _LoginScreenState extends State<LoginScreen> {
                 Card(
                   child: Padding(
                     padding: const EdgeInsets.all(18),
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          SegmentedButton<bool>(
-                            segments: const [
-                              ButtonSegment(value: false, label: Text('로그인')),
-                              ButtonSegment(value: true, label: Text('가입')),
-                            ],
-                            selected: {isRegister},
-                            onSelectionChanged: (value) {
-                              setState(() => isRegister = value.first);
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          if (isRegister)
-                            TextFormField(
-                              controller: nicknameController,
-                              decoration: const InputDecoration(
-                                labelText: '닉네임',
-                              ),
-                              validator: (value) =>
-                                  value == null || value.trim().length < 2
-                                  ? '닉네임을 2자 이상 입력하세요'
-                                  : null,
-                            ),
-                          if (isRegister) const SizedBox(height: 12),
-                          TextFormField(
-                            controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(labelText: '이메일'),
-                            validator: (value) =>
-                                value == null || !value.contains('@')
-                                ? '이메일을 입력하세요'
-                                : null,
-                          ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: passwordController,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: '비밀번호',
-                            ),
-                            validator: (value) =>
-                                value == null || value.length < 8
-                                ? '비밀번호는 8자 이상이어야 합니다'
-                                : null,
-                          ),
-                          if (widget.controller.errorMessage != null) ...[
-                            const SizedBox(height: 12),
-                            Text(
-                              widget.controller.errorMessage!,
-                              style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        SegmentedButton<bool>(
+                          segments: const [
+                            ButtonSegment(value: false, label: Text('로그인')),
+                            ButtonSegment(value: true, label: Text('가입')),
                           ],
-                          const SizedBox(height: 16),
-                          FilledButton(
-                            onPressed: widget.controller.isBusy ? null : submit,
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              child: widget.controller.isBusy
-                                  ? const SizedBox(
-                                      width: 20,
-                                      height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2.5,
-                                      ),
-                                    )
-                                  : Text(isRegister ? '계정 만들기' : '로그인'),
+                          selected: {isRegister},
+                          onSelectionChanged: (value) {
+                            setState(() {
+                              isRegister = value.first;
+                              formError = null;
+                            });
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        if (isRegister)
+                          TextField(
+                            controller: nicknameController,
+                            decoration: const InputDecoration(labelText: '닉네임'),
+                          ),
+                        if (isRegister) const SizedBox(height: 12),
+                        TextField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(labelText: '이메일'),
+                        ),
+                        const SizedBox(height: 12),
+                        TextField(
+                          controller: passwordController,
+                          obscureText: true,
+                          decoration: const InputDecoration(labelText: '비밀번호'),
+                        ),
+                        if (formError != null ||
+                            widget.controller.errorMessage != null) ...[
+                          const SizedBox(height: 12),
+                          Text(
+                            formError ?? widget.controller.errorMessage!,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.error,
                             ),
                           ),
                         ],
-                      ),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: widget.controller.isBusy ? null : submit,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: widget.controller.isBusy
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(isRegister ? '계정 만들기' : '로그인'),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -162,19 +147,32 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> submit() async {
-    if (!formKey.currentState!.validate()) return;
+    final email = emailController.text.trim();
+    final password = passwordController.text;
+    final nickname = nicknameController.text.trim();
+    if (!email.contains('@')) {
+      setState(() => formError = '이메일을 입력하세요');
+      return;
+    }
+    if (password.length < 8) {
+      setState(() => formError = '비밀번호는 8자 이상이어야 합니다');
+      return;
+    }
+    if (isRegister && nickname.length < 2) {
+      setState(() => formError = '닉네임을 2자 이상 입력하세요');
+      return;
+    }
+    FocusManager.instance.primaryFocus?.unfocus();
+    setState(() => formError = null);
     if (isRegister) {
       await widget.controller.register(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-        nickname: nicknameController.text.trim(),
+        email: email,
+        password: password,
+        nickname: nickname,
       );
       return;
     }
 
-    await widget.controller.login(
-      emailController.text.trim(),
-      passwordController.text,
-    );
+    await widget.controller.login(email, password);
   }
 }

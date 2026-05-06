@@ -190,12 +190,12 @@ Future<void> showSubjectSheet(
   BuildContext context,
   AppController controller, [
   StudySubject? subject,
-]) {
+]) async {
   final nameController = TextEditingController(text: subject?.name ?? '');
   var color = subject?.color ?? subjectColors.first;
   var targetMinutes = subject?.targetMinutesPerDay ?? 60;
 
-  return showModalBottomSheet<void>(
+  final draft = await showModalBottomSheet<_SubjectDraft>(
     context: context,
     isScrollControlled: true,
     builder: (context) {
@@ -271,24 +271,17 @@ Future<void> showSubjectSheet(
                 ),
                 const SizedBox(height: 10),
                 FilledButton(
-                  onPressed: () async {
+                  onPressed: () {
                     final name = nameController.text.trim();
                     if (name.isEmpty) return;
-                    if (subject == null) {
-                      await controller.createSubject(
+                    Navigator.pop(
+                      context,
+                      _SubjectDraft(
                         name: name,
                         color: color,
-                        targetMinutesPerDay: targetMinutes,
-                      );
-                    } else {
-                      await controller.updateSubject(
-                        id: subject.id,
-                        name: name,
-                        color: color,
-                        targetMinutesPerDay: targetMinutes,
-                      );
-                    }
-                    if (context.mounted) Navigator.pop(context);
+                        targetMinutes: targetMinutes,
+                      ),
+                    );
                   },
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -302,4 +295,33 @@ Future<void> showSubjectSheet(
       );
     },
   ).whenComplete(nameController.dispose);
+
+  if (draft == null) return;
+  await Future<void>.delayed(const Duration(milliseconds: 80));
+  if (subject == null) {
+    await controller.createSubject(
+      name: draft.name,
+      color: draft.color,
+      targetMinutesPerDay: draft.targetMinutes,
+    );
+  } else {
+    await controller.updateSubject(
+      id: subject.id,
+      name: draft.name,
+      color: draft.color,
+      targetMinutesPerDay: draft.targetMinutes,
+    );
+  }
+}
+
+class _SubjectDraft {
+  const _SubjectDraft({
+    required this.name,
+    required this.color,
+    required this.targetMinutes,
+  });
+
+  final String name;
+  final String color;
+  final int targetMinutes;
 }

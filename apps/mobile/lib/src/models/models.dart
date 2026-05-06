@@ -373,6 +373,9 @@ class MissionGroupSummary {
     required this.memberCount,
     required this.myMinutes,
     required this.members,
+    required this.isJoined,
+    this.ownerNickname,
+    this.createdAt,
   });
 
   final String id;
@@ -384,6 +387,9 @@ class MissionGroupSummary {
   final int memberCount;
   final int myMinutes;
   final List<MissionMemberSummary> members;
+  final bool isJoined;
+  final String? ownerNickname;
+  final DateTime? createdAt;
 
   factory MissionGroupSummary.fromJson(Map<String, dynamic> json) {
     return MissionGroupSummary(
@@ -401,6 +407,11 @@ class MissionGroupSummary {
                 MissionMemberSummary.fromJson(item as Map<String, dynamic>),
           )
           .toList(),
+      isJoined: json['isJoined'] as bool? ?? true,
+      ownerNickname: json['ownerNickname'] as String?,
+      createdAt: json['createdAt'] == null
+          ? null
+          : DateTime.tryParse(json['createdAt'] as String),
     );
   }
 }

@@ -85,6 +85,27 @@ class ApiClient {
     return MissionData.fromJson(json);
   }
 
+  Future<List<MissionGroupSummary>> getMissionGroups(
+    DateTime date, {
+    String query = '',
+  }) async {
+    final json = await _request(
+      'GET',
+      '/missions/groups',
+      query: {
+        'date': isoDate(date),
+        'timezoneOffsetMinutes': date.timeZoneOffset.inMinutes.toString(),
+        if (query.trim().isNotEmpty) 'query': query.trim(),
+      },
+    );
+    final groups = json['groups'] as List<dynamic>? ?? const [];
+    return groups
+        .map(
+          (item) => MissionGroupSummary.fromJson(item as Map<String, dynamic>),
+        )
+        .toList();
+  }
+
   Future<void> createMissionGroup({
     required String name,
     required int weeklyTargetMinutes,

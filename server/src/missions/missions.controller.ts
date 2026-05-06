@@ -34,6 +34,21 @@ export class MissionsController {
     return this.missionsService.createGroup(request.user!.sub, dto);
   }
 
+  @Get('groups')
+  listGroups(
+    @Req() request: AuthenticatedRequest,
+    @Query('date') date?: string,
+    @Query('timezoneOffsetMinutes') timezoneOffsetMinutes = '0',
+    @Query('query') query = '',
+  ) {
+    return this.missionsService.listGroups(
+      request.user!.sub,
+      date,
+      Number(timezoneOffsetMinutes),
+      query,
+    );
+  }
+
   @Post('groups/join')
   joinGroup(
     @Req() request: AuthenticatedRequest,

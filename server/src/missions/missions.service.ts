@@ -218,6 +218,99 @@ export class MissionsService {
     return group;
   }
 
+  async listGroups(
+    userId: string,
+    anchorDate?: string,
+    timezoneOffsetMinutes = 0,
+    query = '',
+  ) {
+    const today = (anchorDate ?? new Date().toISOString()).slice(0, 10);
+    const weekStart = startOfWeek(today);
+    const weekEnd = addDays(weekStart, 7);
+    const weekFrom = localDateToUtc(weekStart, timezoneOffsetMinutes);
+    const weekUntil = localDateToUtc(weekEnd, timezoneOffsetMinutes);
+    const search = query.trim();
+
+    const groups = await this.prisma.missionGroup.findMany({
+      where: search.length >= 2 ? { name: { contains: search } } : undefined,
+      include: {
+        owner: { select: { nickname: true } },
+        members: {
+          include: {
+            user: { select: { id: true, nickname: true, email: true } },
+          },
+          orderBy: { joinedAt: 'asc' },
+        },
+      },
+      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+      take: 50,
+    });
+
+    const allMemberIds = [
+      ...new Set(groups.flatMap((group) => group.members.map((member) => member.userId))),
+    ];
+    const sessions = allMemberIds.length
+      ? await this.prisma.studySession.findMany({
+          where: {
+            userId: { in: allMemberIds },
+            startedAt: { gte: weekFrom, lt: weekUntil },
+          },
+          select: { userId: true, durationMinutes: true },
+        })
+      : [];
+    const minutesByUser = new Map<string, number>();
+    for (const session of sessions) {
+      minutesByUser.set(
+        session.userId,
+        (minutesByUser.get(session.userId) ?? 0) + session.durationMinutes,
+      );
+    }
+
+    const items = groups.map((group) => {
+      const memberTarget = Math.max(
+        1,
+        Math.round(group.weeklyTargetMinutes / Math.max(1, group.members.length)),
+      );
+      const members = group.members
+        .map((member) => {
+          const weeklyMinutes = minutesByUser.get(member.userId) ?? 0;
+          return {
+            userId: member.userId,
+            nickname: member.user.nickname,
+            role: member.role,
+            weeklyMinutes,
+            progressPercent: percent(weeklyMinutes, memberTarget),
+          };
+        })
+        .sort((a, b) => b.weeklyMinutes - a.weeklyMinutes)
+        .map((member, index) => ({
+          ...member,
+          rank: index + 1,
+          isCurrentUser: member.userId === userId,
+        }));
+      const weeklyMinutes = members.reduce(
+        (sum, member) => sum + member.weeklyMinutes,
+        0,
+      );
+      return {
+        id: group.id,
+        name: group.name,
+        inviteCode: group.inviteCode,
+        ownerNickname: group.owner.nickname,
+        weeklyTargetMinutes: group.weeklyTargetMinutes,
+        weeklyMinutes,
+        progressPercent: percent(weeklyMinutes, group.weeklyTargetMinutes),
+        memberCount: group.members.length,
+        myMinutes: minutesByUser.get(userId) ?? 0,
+        isJoined: group.members.some((member) => member.userId === userId),
+        members,
+        createdAt: group.createdAt,
+      };
+    });
+
+    return { groups: items };
+  }
+
   async joinGroup(userId: string, dto: JoinMissionGroupDto) {
     const inviteCode = dto.inviteCode.trim().toUpperCase();
     const group = await this.prisma.missionGroup.findUnique({

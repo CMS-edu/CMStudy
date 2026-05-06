@@ -37,6 +37,28 @@ class MissionsScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _MissionHero(data: missionData),
             const SizedBox(height: 18),
+            _GroupCommandCenter(controller: controller),
+            const SizedBox(height: 18),
+            _SectionHeader(
+              title: '내 공부 그룹',
+              trailing: '${missionData.groups.length}개',
+            ),
+            const SizedBox(height: 10),
+            if (missionData.groups.isEmpty)
+              _EmptyGroupCard(controller: controller)
+            else
+              ...missionData.groups.map(
+                (group) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: _MissionGroupCard(
+                    group: group,
+                    onOpen: () => showGroupDetailSheet(context, group),
+                  ),
+                ),
+              ),
+            const SizedBox(height: 18),
+            _GroupDiscoverySection(controller: controller),
+            const SizedBox(height: 18),
             _SectionHeader(
               title: '시간대 미션',
               trailing: '${missionData.timeMissions.length}개',
@@ -54,6 +76,16 @@ class MissionsScreen extends StatelessWidget {
                   ),
                 ),
               ),
+            if (missionData.timeMissions.isNotEmpty)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      showCreateTimeMissionSheet(context, controller),
+                  icon: const Icon(Icons.add_alarm_outlined),
+                  label: const Text('시간대 미션 추가'),
+                ),
+              ),
             const SizedBox(height: 18),
             const _SectionHeader(title: '개인 미션'),
             const SizedBox(height: 10),
@@ -69,25 +101,9 @@ class MissionsScreen extends StatelessWidget {
                   child: _PersonalMissionCard(mission: mission),
                 ),
               ),
-            const SizedBox(height: 18),
-            _SectionHeader(
-              title: '미션 그룹',
-              trailing: '${missionData.groups.length}개',
-            ),
-            const SizedBox(height: 10),
-            if (missionData.groups.isEmpty)
-              _EmptyGroupCard(controller: controller)
-            else
-              ...missionData.groups.map(
-                (group) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: _MissionGroupCard(group: group),
-                ),
-              ),
           ],
         ),
       ),
-      floatingActionButton: _MissionActions(controller: controller),
     );
   }
 }
@@ -155,6 +171,267 @@ class _MissionHero extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _GroupCommandCenter extends StatelessWidget {
+  const _GroupCommandCenter({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final joined = controller.missionData.groups.length;
+    final discoverable = controller.groupDirectory.length;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.groups_2_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    '그룹 허브',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                Text(
+                  '내 그룹 $joined · 공개 $discoverable',
+                  style: const TextStyle(color: Colors.blueGrey),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              '같이 공부할 방을 만들고, 이미 열린 그룹을 둘러본 뒤 바로 참여할 수 있습니다.',
+              style: TextStyle(color: Colors.blueGrey),
+            ),
+            if (controller.errorMessage != null) ...[
+              const SizedBox(height: 10),
+              _InlineError(message: controller.errorMessage!),
+            ],
+            const SizedBox(height: 14),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: controller.isBusy
+                        ? null
+                        : () => showCreateGroupSheet(context, controller),
+                    icon: const Icon(Icons.group_add_outlined),
+                    label: const Text('그룹 만들기'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: controller.isBusy
+                        ? null
+                        : () => showJoinGroupSheet(context, controller),
+                    icon: const Icon(Icons.key_outlined),
+                    label: const Text('코드 참여'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InlineError extends StatelessWidget {
+  const _InlineError({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Theme.of(context).colorScheme.error;
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: color.withAlpha(22),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: color, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(color: color, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GroupDiscoverySection extends StatelessWidget {
+  const _GroupDiscoverySection({required this.controller});
+
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final groups = controller.groupDirectory;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SectionHeader(title: '그룹 둘러보기', trailing: '${groups.length}개'),
+        const SizedBox(height: 10),
+        if (groups.isEmpty)
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.travel_explore_outlined,
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      '아직 볼 수 있는 그룹이 없습니다. 첫 공개 그룹을 만들어보세요.',
+                      style: TextStyle(color: Colors.blueGrey),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ...groups.map(
+            (group) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _GroupDirectoryCard(group: group, controller: controller),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _GroupDirectoryCard extends StatelessWidget {
+  const _GroupDirectoryCard({required this.group, required this.controller});
+
+  final MissionGroupSummary group;
+  final AppController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final topMember = group.members.isEmpty ? null : group.members.first;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    group.name,
+                    style: const TextStyle(fontWeight: FontWeight.w900),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                _StatusPill(
+                  label: group.isJoined ? '참여 중' : '공개',
+                  selected: group.isJoined,
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '${group.memberCount}명 · 방장 ${group.ownerNickname ?? '-'} · 이번 주 ${formatMinutes(group.weeklyMinutes)}',
+              style: const TextStyle(color: Colors.blueGrey),
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (topMember != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                '1위 ${topMember.nickname} · ${formatMinutes(topMember.weeklyMinutes)}',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ],
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: LinearProgressIndicator(
+                value: (group.progressPercent / 100).clamp(0.0, 1.0),
+                minHeight: 7,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => showGroupDetailSheet(context, group),
+                    icon: const Icon(Icons.visibility_outlined),
+                    label: const Text('열람'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: FilledButton.tonalIcon(
+                    onPressed: group.isJoined || controller.isBusy
+                        ? null
+                        : () => joinGroupFromUi(
+                            context,
+                            controller,
+                            group.inviteCode,
+                          ),
+                    icon: const Icon(Icons.login),
+                    label: Text(group.isJoined ? '참여 완료' : '참여'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusPill extends StatelessWidget {
+  const _StatusPill({required this.label, required this.selected});
+
+  final String label;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? const Color(0xFF059669)
+        : Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(999),
+        color: color.withAlpha(24),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(color: color, fontWeight: FontWeight.w900),
       ),
     );
   }
@@ -453,9 +730,10 @@ class _EmptyGroupCard extends StatelessWidget {
 }
 
 class _MissionGroupCard extends StatelessWidget {
-  const _MissionGroupCard({required this.group});
+  const _MissionGroupCard({required this.group, required this.onOpen});
 
   final MissionGroupSummary group;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -518,6 +796,15 @@ class _MissionGroupCard extends StatelessWidget {
                     child: _MemberRow(member: member),
                   ),
                 ),
+            const SizedBox(height: 6),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: onOpen,
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('그룹 상세'),
+              ),
+            ),
           ],
         ),
       ),
@@ -593,40 +880,6 @@ class _MemberRow extends StatelessWidget {
         Text(
           formatMinutes(member.weeklyMinutes),
           style: const TextStyle(fontWeight: FontWeight.w800),
-        ),
-      ],
-    );
-  }
-}
-
-class _MissionActions extends StatelessWidget {
-  const _MissionActions({required this.controller});
-
-  final AppController controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        FloatingActionButton.small(
-          heroTag: 'create-time-mission',
-          onPressed: () => showCreateTimeMissionSheet(context, controller),
-          child: const Icon(Icons.add_alarm_outlined),
-        ),
-        const SizedBox(height: 8),
-        FloatingActionButton.small(
-          heroTag: 'join-mission-group',
-          onPressed: () => showJoinGroupSheet(context, controller),
-          child: const Icon(Icons.login),
-        ),
-        const SizedBox(height: 8),
-        FloatingActionButton.extended(
-          heroTag: 'create-mission-group',
-          onPressed: () => showCreateGroupSheet(context, controller),
-          icon: const Icon(Icons.group_add_outlined),
-          label: const Text('그룹 만들기'),
         ),
       ],
     );
@@ -797,6 +1050,112 @@ class _EmptyMissionCard extends StatelessWidget {
   }
 }
 
+Future<void> joinGroupFromUi(
+  BuildContext context,
+  AppController controller,
+  String inviteCode,
+) async {
+  final messenger = ScaffoldMessenger.of(context);
+  final ok = await controller.joinMissionGroup(inviteCode);
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        ok ? '그룹에 참여했습니다.' : controller.errorMessage ?? '그룹 참여에 실패했습니다.',
+      ),
+    ),
+  );
+}
+
+Future<void> showGroupDetailSheet(
+  BuildContext context,
+  MissionGroupSummary group,
+) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    requestFocus: false,
+    showDragHandle: true,
+    builder: (context) {
+      return DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.76,
+        minChildSize: 0.42,
+        maxChildSize: 0.92,
+        builder: (context, scrollController) {
+          return ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.fromLTRB(18, 6, 18, 24),
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      group.name,
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  _InviteCode(code: group.inviteCode),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${group.memberCount}명 · 방장 ${group.ownerNickname ?? '-'}',
+                style: const TextStyle(color: Colors.blueGrey),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _MetricLine(
+                      label: '이번 주 전체',
+                      value: formatMinutes(group.weeklyMinutes),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: _MetricLine(
+                      label: '주간 목표',
+                      value: formatMinutes(group.weeklyTargetMinutes),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(999),
+                child: LinearProgressIndicator(
+                  value: (group.progressPercent / 100).clamp(0.0, 1.0),
+                  minHeight: 9,
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                '주간 멤버 랭킹',
+                style: TextStyle(fontWeight: FontWeight.w900),
+              ),
+              const SizedBox(height: 10),
+              if (group.members.isEmpty)
+                const Text(
+                  '아직 표시할 멤버 기록이 없습니다.',
+                  style: TextStyle(color: Colors.blueGrey),
+                )
+              else
+                ...group.members.map(
+                  (member) => Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: _MemberRow(member: member),
+                  ),
+                ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
+
 Future<void> showCreateTimeMissionSheet(
   BuildContext context,
   AppController controller,
@@ -956,6 +1315,7 @@ Future<void> showCreateGroupSheet(
   BuildContext context,
   AppController controller,
 ) async {
+  final messenger = ScaffoldMessenger.of(context);
   final result = await showModalBottomSheet<_CreateGroupDraft>(
     context: context,
     isScrollControlled: true,
@@ -967,9 +1327,18 @@ Future<void> showCreateGroupSheet(
 
   if (result == null) return;
   await Future<void>.delayed(const Duration(milliseconds: 300));
-  await controller.createMissionGroup(
+  final ok = await controller.createMissionGroup(
     name: result.name,
     weeklyTargetMinutes: result.weeklyTargetMinutes,
+  );
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        ok
+            ? '${result.name} 그룹을 만들었습니다.'
+            : controller.errorMessage ?? '그룹을 만들지 못했습니다.',
+      ),
+    ),
   );
 }
 
@@ -977,6 +1346,7 @@ Future<void> showJoinGroupSheet(
   BuildContext context,
   AppController controller,
 ) async {
+  final messenger = ScaffoldMessenger.of(context);
   final codeController = TextEditingController();
   final inviteCode = await showModalBottomSheet<String>(
     context: context,
@@ -1024,7 +1394,14 @@ Future<void> showJoinGroupSheet(
 
   if (inviteCode == null) return;
   await Future<void>.delayed(const Duration(milliseconds: 300));
-  await controller.joinMissionGroup(inviteCode);
+  final ok = await controller.joinMissionGroup(inviteCode);
+  messenger.showSnackBar(
+    SnackBar(
+      content: Text(
+        ok ? '그룹에 참여했습니다.' : controller.errorMessage ?? '그룹 참여에 실패했습니다.',
+      ),
+    ),
+  );
 }
 
 String missionLabel(PersonalMission mission) {

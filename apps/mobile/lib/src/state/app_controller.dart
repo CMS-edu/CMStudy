@@ -27,6 +27,7 @@ class AppController extends ChangeNotifier {
   List<StudyTask> tasks = const [];
   StudyStats stats = StudyStats.empty;
   MissionData missionData = MissionData.empty;
+  List<MissionGroupSummary> groupDirectory = const [];
   DateTime selectedDate = DateTime.now();
   ThemeMode themeMode = ThemeMode.system;
   CmThemePreset themePreset = CmThemePreset.graphite;
@@ -173,6 +174,11 @@ class AppController extends ChangeNotifier {
     } catch (_) {
       missionData = MissionData.empty;
     }
+    try {
+      groupDirectory = await api.getMissionGroups(selectedDate);
+    } catch (_) {
+      groupDirectory = const [];
+    }
     notifyListeners();
   }
 
@@ -252,24 +258,51 @@ class AppController extends ChangeNotifier {
     });
   }
 
-  Future<void> createMissionGroup({
+  Future<bool> createMissionGroup({
     required String name,
     required int weeklyTargetMinutes,
   }) async {
+    var ok = false;
     await _run(() async {
       await api.createMissionGroup(
         name: name,
         weeklyTargetMinutes: weeklyTargetMinutes,
       );
-      missionData = await api.getMissionData(selectedDate);
+      try {
+        missionData = await api.getMissionData(selectedDate);
+      } catch (_) {}
+      try {
+        groupDirectory = await api.getMissionGroups(selectedDate);
+      } catch (_) {
+        groupDirectory = const [];
+      }
+      ok = true;
       notifyListeners();
     });
+    return ok && errorMessage == null;
   }
 
-  Future<void> joinMissionGroup(String inviteCode) async {
+  Future<bool> joinMissionGroup(String inviteCode) async {
+    var ok = false;
     await _run(() async {
       await api.joinMissionGroup(inviteCode);
-      missionData = await api.getMissionData(selectedDate);
+      try {
+        missionData = await api.getMissionData(selectedDate);
+      } catch (_) {}
+      try {
+        groupDirectory = await api.getMissionGroups(selectedDate);
+      } catch (_) {
+        groupDirectory = const [];
+      }
+      ok = true;
+      notifyListeners();
+    });
+    return ok && errorMessage == null;
+  }
+
+  Future<void> refreshMissionGroups({String query = ''}) async {
+    await _run(() async {
+      groupDirectory = await api.getMissionGroups(selectedDate, query: query);
       notifyListeners();
     });
   }
@@ -300,7 +333,14 @@ class AppController extends ChangeNotifier {
           minute: startMinute % 60,
         );
       }
-      missionData = await api.getMissionData(selectedDate);
+      try {
+        missionData = await api.getMissionData(selectedDate);
+      } catch (_) {}
+      try {
+        groupDirectory = await api.getMissionGroups(selectedDate);
+      } catch (_) {
+        groupDirectory = const [];
+      }
       notifyListeners();
     });
   }
@@ -344,6 +384,7 @@ class AppController extends ChangeNotifier {
     tasks = const [];
     stats = StudyStats.empty;
     missionData = MissionData.empty;
+    groupDirectory = const [];
     selectedDate = DateTime.now();
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(tokenKey);

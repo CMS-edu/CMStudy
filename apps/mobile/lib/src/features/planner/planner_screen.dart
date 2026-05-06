@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/assets.dart';
+import '../../core/sheet_frame.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
 
@@ -123,13 +124,7 @@ Future<void> _showTaskSheet(
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setModalState) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              18,
-              18,
-              18,
-              MediaQuery.of(context).viewInsets.bottom + 18,
-            ),
+          return SheetFrame(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

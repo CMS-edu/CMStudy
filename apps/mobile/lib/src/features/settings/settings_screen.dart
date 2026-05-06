@@ -67,24 +67,21 @@ class SettingsScreen extends StatelessWidget {
             title: '기록 화면',
             subtitle: '홈과 분석 화면에 표시할 정보량을 조절합니다.',
             children: [
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('이미지 표시'),
-                subtitle: const Text('로그인, 빈 화면, 스탑워치 일러스트를 표시합니다.'),
+              _SettingSwitchTile(
+                title: '이미지 표시',
+                subtitle: '로그인, 빈 화면, 스탑워치 일러스트를 표시합니다.',
                 value: controller.showImages,
                 onChanged: controller.setShowImages,
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('작전판에 계획 표시'),
-                subtitle: const Text('계획 기능을 쓰는 경우 홈 하단에 오늘 계획을 보여줍니다.'),
+              _SettingSwitchTile(
+                title: '작전판에 계획 표시',
+                subtitle: '계획 기능을 쓰는 경우 홈 하단에 오늘 계획을 보여줍니다.',
                 value: controller.showPlansOnHome,
                 onChanged: controller.setShowPlansOnHome,
               ),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('분석 정보 촘촘히 보기'),
-                subtitle: const Text('통계 화면에서 보조 지표와 분석 메모를 더 자세히 표시합니다.'),
+              _SettingSwitchTile(
+                title: '분석 정보 촘촘히 보기',
+                subtitle: '통계 화면에서 보조 지표와 분석 메모를 더 자세히 표시합니다.',
                 value: controller.denseStats,
                 onChanged: controller.setDenseStats,
               ),
@@ -127,6 +124,47 @@ class SettingsScreen extends StatelessWidget {
               ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SettingSwitchTile extends StatelessWidget {
+  const _SettingSwitchTile({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 4),
+                Text(subtitle, style: const TextStyle(color: Colors.blueGrey)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Switch(value: value, onChanged: onChanged),
         ],
       ),
     );

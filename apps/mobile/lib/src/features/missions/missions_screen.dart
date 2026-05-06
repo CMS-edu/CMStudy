@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/sheet_frame.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
@@ -957,13 +958,8 @@ class _CreateGroupSheetState extends State<_CreateGroupSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        18,
-        8,
-        18,
-        MediaQuery.viewInsetsOf(context).bottom + 18,
-      ),
+    return SheetFrame(
+      padding: const EdgeInsets.fromLTRB(18, 8, 18, 18),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1190,13 +1186,7 @@ Future<void> showCreateTimeMissionSheet(
             if (picked != null) setModalState(() => endTime = picked);
           }
 
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              18,
-              18,
-              18,
-              MediaQuery.viewInsetsOf(context).bottom + 18,
-            ),
+          return SheetFrame(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1353,13 +1343,7 @@ Future<void> showJoinGroupSheet(
     isScrollControlled: true,
     requestFocus: false,
     builder: (context) {
-      return Padding(
-        padding: EdgeInsets.fromLTRB(
-          18,
-          18,
-          18,
-          MediaQuery.viewInsetsOf(context).bottom + 18,
-        ),
+      return SheetFrame(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

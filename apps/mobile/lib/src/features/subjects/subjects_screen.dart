@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/sheet_frame.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
@@ -202,13 +203,7 @@ Future<void> showSubjectSheet(
     builder: (context) {
       return StatefulBuilder(
         builder: (context, setModalState) {
-          return Padding(
-            padding: EdgeInsets.fromLTRB(
-              18,
-              18,
-              18,
-              MediaQuery.of(context).viewInsets.bottom + 18,
-            ),
+          return SheetFrame(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

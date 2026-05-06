@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../core/assets.dart';
+import '../../core/sheet_frame.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 import '../home/dashboard_screen.dart';
@@ -465,67 +466,59 @@ class _SessionReviewSheetState extends State<_SessionReviewSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(
-          18,
-          18,
-          18,
-          MediaQuery.viewInsetsOf(context).bottom + 18,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              '세션 저장',
-              style: Theme.of(
-                context,
-              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+    return SheetFrame(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            '세션 저장',
+            style: Theme.of(
+              context,
+            ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${widget.subject.name} · ${formatMinutes(widget.minutes)}',
+            style: const TextStyle(color: Colors.blueGrey),
+          ),
+          const SizedBox(height: 18),
+          _RatingSelector(
+            label: '집중도',
+            value: focus,
+            onChanged: (value) => setState(() => focus = value),
+          ),
+          const SizedBox(height: 14),
+          _RatingSelector(
+            label: '난이도',
+            value: difficulty,
+            onChanged: (value) => setState(() => difficulty = value),
+          ),
+          const SizedBox(height: 14),
+          TextField(
+            controller: memoController,
+            minLines: 2,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: '공부 내용 메모',
+              hintText: '예: 미적분 문제풀이, 오답 12번까지',
             ),
-            const SizedBox(height: 6),
-            Text(
-              '${widget.subject.name} · ${formatMinutes(widget.minutes)}',
-              style: const TextStyle(color: Colors.blueGrey),
-            ),
-            const SizedBox(height: 18),
-            _RatingSelector(
-              label: '집중도',
-              value: focus,
-              onChanged: (value) => setState(() => focus = value),
-            ),
-            const SizedBox(height: 14),
-            _RatingSelector(
-              label: '난이도',
-              value: difficulty,
-              onChanged: (value) => setState(() => difficulty = value),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: memoController,
-              minLines: 2,
-              maxLines: 4,
-              decoration: const InputDecoration(
-                labelText: '공부 내용 메모',
-                hintText: '예: 미적분 문제풀이, 오답 12번까지',
-              ),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(context).pop(
-                  SessionReview(
-                    focusRating: focus,
-                    difficultyRating: difficulty,
-                    memo: memoController.text,
-                  ),
-                );
-              },
-              icon: const Icon(Icons.save_outlined),
-              label: const Text('저장'),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: () {
+              Navigator.of(context).pop(
+                SessionReview(
+                  focusRating: focus,
+                  difficultyRating: difficulty,
+                  memo: memoController.text,
+                ),
+              );
+            },
+            icon: const Icon(Icons.save_outlined),
+            label: const Text('저장'),
+          ),
+        ],
       ),
     );
   }

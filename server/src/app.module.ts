@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 
 import { AuthModule } from './auth/auth.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { HealthController } from './health.controller';
 import { MissionsModule } from './missions/missions.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { StatsModule } from './stats/stats.module';
@@ -22,5 +23,6 @@ import { SubjectsModule } from './subjects/subjects.module';
     MissionsModule,
     DashboardModule,
   ],
+  controllers: [HealthController],
 })
 export class AppModule {}

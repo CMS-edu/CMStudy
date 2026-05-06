@@ -36,6 +36,8 @@ class ApiClient {
     ),
   });
 
+  static const requestTimeout = Duration(seconds: 90);
+
   final String baseUrl;
   String? token;
 
@@ -241,11 +243,9 @@ class ApiClient {
     Object? body,
   }) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
-    final client = HttpClient();
+    final client = HttpClient()..connectionTimeout = requestTimeout;
     try {
-      final request = await client
-          .openUrl(method, uri)
-          .timeout(const Duration(seconds: 25));
+      final request = await client.openUrl(method, uri).timeout(requestTimeout);
       request.headers.contentType = ContentType.json;
       if (token != null) {
         request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
@@ -254,13 +254,11 @@ class ApiClient {
         request.write(jsonEncode(body));
       }
 
-      final response = await request.close().timeout(
-        const Duration(seconds: 25),
-      );
+      final response = await request.close().timeout(requestTimeout);
       final text = await utf8.decoder
           .bind(response)
           .join()
-          .timeout(const Duration(seconds: 25));
+          .timeout(requestTimeout);
       final decoded = text.isEmpty ? <String, dynamic>{} : jsonDecode(text);
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -274,7 +272,7 @@ class ApiClient {
     } on SocketException {
       throw const ApiException('서버에 연결할 수 없습니다. API 서버가 켜져 있는지 확인하세요.');
     } on TimeoutException {
-      throw const ApiException('서버 응답이 지연되고 있습니다. 잠시 후 다시 시도하세요.');
+      throw const ApiException('서버가 깨어나는 중입니다. 1분 뒤 다시 시도하세요.');
     } finally {
       client.close(force: true);
     }

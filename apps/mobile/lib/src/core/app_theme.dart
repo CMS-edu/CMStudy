@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+const cmCorner = 3.0;
+const cmTightCorner = 2.0;
+const cmControlCorner = 3.0;
+
 enum CmThemePreset { graphite, forest, dawn, ink, studio, marine }
 
 class CmThemeProfile {
@@ -58,11 +62,11 @@ const cmThemeProfiles = [
     preset: CmThemePreset.graphite,
     label: '그래파이트',
     description: '가장 균형 잡힌 기본 집중 테마',
-    seedColor: Color(0xFF2557D6),
+    seedColor: Color(0xFF1D4ED8),
     secondaryColor: Color(0xFF0F766E),
     tertiaryColor: Color(0xFFB45309),
-    lightBackground: Color(0xFFF4F7FB),
-    darkBackground: Color(0xFF0A0F1C),
+    lightBackground: Color(0xFFF3F5F8),
+    darkBackground: Color(0xFF080D16),
     lightSurface: Color(0xFFFFFFFF),
     darkSurface: Color(0xFF111827),
   ),
@@ -150,7 +154,7 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
   final elevatedSurface = isDark
       ? Color.alphaBlend(Colors.white.withAlpha(10), surface)
       : Color.alphaBlend(profile.seedColor.withAlpha(8), surface);
-  final outline = isDark ? const Color(0xFF29364B) : const Color(0xFFDCE4EE);
+  final outline = isDark ? const Color(0xFF334155) : const Color(0xFFD2DAE5);
   final subtleFill = isDark
       ? const Color(0xFF0E1626)
       : Color.alphaBlend(profile.seedColor.withAlpha(7), Colors.white);
@@ -182,7 +186,7 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
         color: scheme.onSurface,
-        fontSize: 19,
+        fontSize: 18,
         fontWeight: FontWeight.w900,
       ),
     ),
@@ -192,14 +196,17 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
       color: surface,
       surfaceTintColor: Colors.transparent,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-        side: BorderSide(color: outline.withAlpha(isDark ? 180 : 235)),
+        borderRadius: BorderRadius.circular(cmCorner),
+        side: BorderSide(color: outline.withAlpha(isDark ? 210 : 255)),
       ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       elevation: 0,
       backgroundColor: surface,
       indicatorColor: profile.seedColor.withAlpha(isDark ? 42 : 30),
+      indicatorShape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cmCorner),
+      ),
       surfaceTintColor: Colors.transparent,
       height: 70,
       labelTextStyle: WidgetStateProperty.resolveWith((states) {
@@ -213,36 +220,44 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
     ),
     filledButtonTheme: FilledButtonThemeData(
       style: FilledButton.styleFrom(
-        minimumSize: const Size(48, 46),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        minimumSize: const Size(48, 44),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cmControlCorner),
+        ),
         textStyle: const TextStyle(fontWeight: FontWeight.w900),
       ),
     ),
     textButtonTheme: TextButtonThemeData(
       style: TextButton.styleFrom(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cmControlCorner),
+        ),
         textStyle: const TextStyle(fontWeight: FontWeight.w900),
       ),
     ),
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
-        minimumSize: const Size(48, 46),
+        minimumSize: const Size(48, 44),
         side: BorderSide(color: outline),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cmControlCorner),
+        ),
         textStyle: const TextStyle(fontWeight: FontWeight.w900),
       ),
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
       fillColor: subtleFill,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(cmControlCorner),
+      ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(cmControlCorner),
         borderSide: BorderSide(color: outline),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(8),
-        borderSide: BorderSide(color: scheme.primary, width: 1.6),
+        borderRadius: BorderRadius.circular(cmControlCorner),
+        borderSide: BorderSide(color: scheme.primary, width: 1.4),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
       labelStyle: TextStyle(color: scheme.onSurfaceVariant),
@@ -250,7 +265,9 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
     chipTheme: ChipThemeData(
       backgroundColor: elevatedSurface,
       selectedColor: profile.seedColor.withAlpha(isDark ? 50 : 28),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cmControlCorner),
+      ),
       side: BorderSide(color: outline),
       labelStyle: const TextStyle(fontWeight: FontWeight.w800),
     ),
@@ -281,7 +298,9 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
         }),
         side: WidgetStatePropertyAll(BorderSide(color: outline)),
         shape: WidgetStatePropertyAll(
-          RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(cmControlCorner),
+          ),
         ),
         textStyle: const WidgetStatePropertyAll(
           TextStyle(fontWeight: FontWeight.w900),
@@ -298,7 +317,9 @@ ThemeData buildCmStudyTheme(CmThemeProfile profile, Brightness brightness) {
     ),
     snackBarTheme: SnackBarThemeData(
       behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(cmCorner),
+      ),
     ),
   );
 }

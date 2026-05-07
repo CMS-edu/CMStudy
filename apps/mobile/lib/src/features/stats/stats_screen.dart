@@ -1,4 +1,4 @@
-import 'dart:math' as math;
+﻿import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -406,7 +406,14 @@ class _SubjectRatioRow extends StatelessWidget {
                 ),
               ),
             ),
-            CircleAvatar(radius: 7, backgroundColor: color),
+            Container(
+              width: 14,
+              height: 14,
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
             const SizedBox(width: 9),
             Expanded(
               child: Text(
@@ -420,7 +427,7 @@ class _SubjectRatioRow extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         ClipRRect(
-          borderRadius: BorderRadius.circular(999),
+          borderRadius: BorderRadius.circular(3),
           child: LinearProgressIndicator(
             value: progress,
             minHeight: 8,
@@ -542,7 +549,7 @@ class _BarChart extends StatelessWidget {
                             ).colorScheme.surfaceContainerHighest
                           : Theme.of(context).colorScheme.primary,
                       borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(8),
+                        top: Radius.circular(3),
                       ),
                     ),
                   ),
@@ -600,7 +607,7 @@ class _HeatGrid extends StatelessWidget {
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: strength.clamp(0.08, 0.92)),
-                  borderRadius: BorderRadius.circular(7),
+                  borderRadius: BorderRadius.circular(3),
                 ),
                 child: Text(
                   day.date.substring(8),
@@ -727,7 +734,7 @@ class _MiniStat extends StatelessWidget {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

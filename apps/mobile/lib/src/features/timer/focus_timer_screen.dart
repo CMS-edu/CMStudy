@@ -1,4 +1,4 @@
-import 'dart:async';
+﻿import 'dart:async';
 
 import 'package:flutter/material.dart';
 
@@ -264,12 +264,19 @@ class _SubjectBadge extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
         color: color.withAlpha(24),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(3),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(radius: 5, backgroundColor: color),
+          Container(
+            width: 10,
+            height: 10,
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
           const SizedBox(width: 8),
           Text(
             subject.name,
@@ -349,8 +356,14 @@ class _SubjectStopwatchTile extends StatelessWidget {
       child: ListTile(
         enabled: enabled || selected,
         onTap: enabled ? onTap : null,
-        leading: CircleAvatar(
-          backgroundColor: color,
+        leading: Container(
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(3),
+          ),
           child: selected
               ? const Icon(Icons.check, color: Colors.white)
               : Text(
@@ -365,7 +378,7 @@ class _SubjectStopwatchTile extends StatelessWidget {
             Text('오늘 누적 ${formatMinutes(total)}'),
             const SizedBox(height: 6),
             ClipRRect(
-              borderRadius: BorderRadius.circular(999),
+              borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 6,

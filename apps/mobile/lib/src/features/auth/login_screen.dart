@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/app_theme.dart';
 import '../../core/assets.dart';
 import '../../state/app_controller.dart';
 
@@ -34,14 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       body: DecoratedBox(
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Color.alphaBlend(profile.seedColor.withAlpha(18), scheme.surface),
-              Theme.of(context).scaffoldBackgroundColor,
-            ],
-          ),
+          color: Theme.of(context).scaffoldBackgroundColor,
         ),
         child: SafeArea(
           child: Center(
@@ -55,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Container(
                       height: 196,
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(cmCorner),
                         border: Border.all(color: scheme.outlineVariant),
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -86,7 +80,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                   height: 38,
                                   alignment: Alignment.center,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
+                                    borderRadius: BorderRadius.circular(
+                                      cmCorner,
+                                    ),
                                     color: Colors.white.withAlpha(230),
                                   ),
                                   child: Icon(

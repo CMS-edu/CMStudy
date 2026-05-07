@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/app_theme.dart';
 import '../../core/local_reminders.dart';
 import '../../state/app_controller.dart';
 import '../missions/missions_screen.dart';
@@ -62,7 +61,7 @@ class _HomeShellState extends State<HomeShell> {
               height: 32,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(cmCorner),
+                borderRadius: BorderRadius.circular(8),
                 color: Theme.of(context).colorScheme.primary.withAlpha(24),
                 border: Border.all(
                   color: Theme.of(context).colorScheme.primary.withAlpha(60),

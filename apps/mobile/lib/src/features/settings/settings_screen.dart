@@ -144,82 +144,76 @@ class _AppearancePreview extends StatelessWidget {
         : (controller.stats.focusedToday / targetMinutes).clamp(0.0, 1.0);
 
     return Container(
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cmCorner),
-        color: scheme.surface,
+        borderRadius: BorderRadius.circular(8),
         border: Border.all(color: scheme.outlineVariant),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(profile.seedColor.withAlpha(32), scheme.surface),
+            Color.alphaBlend(
+              profile.secondaryColor.withAlpha(22),
+              scheme.surface,
+            ),
+          ],
+        ),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(width: 4, color: profile.seedColor),
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      _ThemeMark(profile: profile, size: 52),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '${profile.label} 테마',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w900),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              themeModeLabel(controller.themeMode),
-                              style: TextStyle(
-                                color: scheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ],
-                        ),
+          Row(
+            children: [
+              _ThemeMark(profile: profile, size: 52),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${profile.label} 테마',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
                       ),
-                      Icon(
-                        Icons.auto_awesome_outlined,
-                        color: profile.tertiaryColor,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(cmTightCorner),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      minHeight: 9,
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _PreviewChip(
-                        color: profile.seedColor,
-                        label:
-                            '오늘 ${formatMinutes(controller.stats.focusedToday)}',
+                    const SizedBox(height: 4),
+                    Text(
+                      themeModeLabel(controller.themeMode),
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w800,
                       ),
-                      _PreviewChip(
-                        color: profile.secondaryColor,
-                        label: '과목 ${controller.subjects.length}개',
-                      ),
-                      _PreviewChip(
-                        color: profile.tertiaryColor,
-                        label: '계획 ${controller.openTaskCount}개',
-                      ),
-                    ],
-                  ),
-                ],
+                    ),
+                  ],
+                ),
               ),
-            ),
+              Icon(Icons.auto_awesome_outlined, color: profile.tertiaryColor),
+            ],
+          ),
+          const SizedBox(height: 18),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(value: progress, minHeight: 9),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _PreviewChip(
+                color: profile.seedColor,
+                label: '오늘 ${formatMinutes(controller.stats.focusedToday)}',
+              ),
+              _PreviewChip(
+                color: profile.secondaryColor,
+                label: '과목 ${controller.subjects.length}개',
+              ),
+              _PreviewChip(
+                color: profile.tertiaryColor,
+                label: '계획 ${controller.openTaskCount}개',
+              ),
+            ],
           ),
         ],
       ),
@@ -296,13 +290,13 @@ class _AccentSwatch extends StatelessWidget {
       message: '강조색 선택',
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(cmCorner),
+        customBorder: const CircleBorder(),
         child: Container(
           width: 38,
           height: 38,
           padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(cmCorner),
+            shape: BoxShape.circle,
             border: Border.all(
               color: selected
                   ? Theme.of(context).colorScheme.onSurface
@@ -311,10 +305,7 @@ class _AccentSwatch extends StatelessWidget {
             ),
           ),
           child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(cmTightCorner),
-              color: color,
-            ),
+            decoration: BoxDecoration(shape: BoxShape.circle, color: color),
             child: selected
                 ? const Icon(Icons.check, color: Colors.white, size: 18)
                 : null,
@@ -416,7 +407,7 @@ class _ThemePresetTile extends StatelessWidget {
             )
           : scheme.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         side: BorderSide(
           color: selected ? profile.seedColor : scheme.outlineVariant,
           width: selected ? 1.7 : 1,
@@ -424,7 +415,7 @@ class _ThemePresetTile extends StatelessWidget {
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.all(13),
           child: Column(
@@ -479,7 +470,7 @@ class _ThemeMark extends StatelessWidget {
       height: size,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         color: Theme.of(context).colorScheme.surface,
         border: Border.all(color: Theme.of(context).colorScheme.outlineVariant),
       ),
@@ -489,9 +480,7 @@ class _ThemeMark extends StatelessWidget {
             flex: 3,
             child: _ColorBlock(
               color: profile.seedColor,
-              radius: const BorderRadius.horizontal(
-                left: Radius.circular(cmTightCorner),
-              ),
+              radius: const BorderRadius.horizontal(left: Radius.circular(5)),
             ),
           ),
           Expanded(flex: 2, child: _ColorBlock(color: profile.secondaryColor)),
@@ -499,9 +488,7 @@ class _ThemeMark extends StatelessWidget {
             flex: 2,
             child: _ColorBlock(
               color: profile.tertiaryColor,
-              radius: const BorderRadius.horizontal(
-                right: Radius.circular(cmTightCorner),
-              ),
+              radius: const BorderRadius.horizontal(right: Radius.circular(5)),
             ),
           ),
         ],
@@ -535,7 +522,7 @@ class _PreviewChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         color: color.withAlpha(
           Theme.of(context).brightness == Brightness.dark ? 42 : 24,
         ),
@@ -571,7 +558,7 @@ class _SettingSwitchTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () => onChanged(!value),
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Row(
@@ -582,7 +569,7 @@ class _SettingSwitchTile extends StatelessWidget {
                 height: 38,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(cmCorner),
+                  borderRadius: BorderRadius.circular(8),
                   color: scheme.primary.withAlpha(
                     Theme.of(context).brightness == Brightness.dark ? 32 : 18,
                   ),
@@ -638,7 +625,7 @@ class _SectionCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         color: scheme.surface,
         border: Border.all(color: scheme.outlineVariant),
       ),
@@ -700,7 +687,7 @@ class _InfoRow extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         color: scheme.surfaceContainerHighest.withAlpha(
           Theme.of(context).brightness == Brightness.dark ? 120 : 140,
         ),
@@ -737,7 +724,7 @@ class _AccountPanel extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cmCorner),
+        borderRadius: BorderRadius.circular(8),
         color: scheme.primary.withAlpha(
           Theme.of(context).brightness == Brightness.dark ? 30 : 16,
         ),
@@ -745,14 +732,8 @@ class _AccountPanel extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: scheme.primary,
-              borderRadius: BorderRadius.circular(cmCorner),
-            ),
+          CircleAvatar(
+            backgroundColor: scheme.primary,
             child: Text(
               name.characters.first,
               style: const TextStyle(

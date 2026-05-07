@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-import '../../core/app_theme.dart';
 import '../../core/assets.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
@@ -153,98 +152,96 @@ class _CommandHero extends StatelessWidget {
         final showArtwork =
             controller.showImages && constraints.maxWidth >= 350;
         return Container(
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(cmCorner),
-            color: scheme.surface,
-            border: Border.all(color: scheme.primary.withAlpha(70)),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: scheme.primary.withAlpha(48)),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color.alphaBlend(
+                  profile.seedColor.withAlpha(34),
+                  scheme.surface,
+                ),
+                Color.alphaBlend(
+                  profile.secondaryColor.withAlpha(22),
+                  scheme.surface,
+                ),
+              ],
+            ),
           ),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(width: 4, color: profile.seedColor),
               Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 9,
-                                vertical: 5,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(cmCorner),
-                                color: profile.seedColor.withAlpha(
-                                  Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? 42
-                                      : 24,
-                                ),
-                                border: Border.all(
-                                  color: profile.seedColor.withAlpha(78),
-                                ),
-                              ),
-                              child: Text(
-                                '오늘 진행률 ${snapshot.targetRate.clamp(0, 999)}%',
-                                style: TextStyle(
-                                  color: profile.seedColor,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              '${controller.user?.nickname ?? '사용자'}님의 오늘 작전',
-                              style: Theme.of(context).textTheme.titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w900),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              snapshot.dailyTarget == 0
-                                  ? '과목 목표를 설정하면 오늘의 추천 루틴이 만들어집니다.'
-                                  : '목표 ${formatMinutes(snapshot.dailyTarget)} 중 ${formatMinutes(snapshot.todayMinutes)} 진행',
-                              style: TextStyle(
-                                color: scheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                            const SizedBox(height: 14),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(
-                                cmTightCorner,
-                              ),
-                              child: LinearProgressIndicator(
-                                value: progress,
-                                minHeight: 9,
-                                backgroundColor: scheme.surface.withAlpha(150),
-                              ),
-                            ),
-                          ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: profile.seedColor.withAlpha(
+                          Theme.of(context).brightness == Brightness.dark
+                              ? 42
+                              : 24,
                         ),
                       ),
-                      if (showArtwork) ...[
-                        const SizedBox(width: 16),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(cmCorner),
-                          child: Image.asset(
-                            AppAssets.focusTimer,
-                            width: 92,
-                            height: 92,
-                            fit: BoxFit.cover,
-                          ),
+                      child: Text(
+                        '오늘 진행률 ${snapshot.targetRate.clamp(0, 999)}%',
+                        style: TextStyle(
+                          color: profile.seedColor,
+                          fontWeight: FontWeight.w900,
                         ),
-                      ] else ...[
-                        const SizedBox(width: 14),
-                        _GradeBadge(grade: snapshot.grade),
-                      ],
-                    ],
-                  ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      '${controller.user?.nickname ?? '사용자'}님의 오늘 작전',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      snapshot.dailyTarget == 0
+                          ? '과목 목표를 설정하면 오늘의 추천 루틴이 만들어집니다.'
+                          : '목표 ${formatMinutes(snapshot.dailyTarget)} 중 ${formatMinutes(snapshot.todayMinutes)} 진행',
+                      style: TextStyle(
+                        color: scheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(999),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        minHeight: 9,
+                        backgroundColor: scheme.surface.withAlpha(150),
+                      ),
+                    ),
+                  ],
                 ),
               ),
+              if (showArtwork) ...[
+                const SizedBox(width: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    AppAssets.focusTimer,
+                    width: 92,
+                    height: 92,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ] else ...[
+                const SizedBox(width: 14),
+                _GradeBadge(grade: snapshot.grade),
+              ],
             ],
           ),
         );
@@ -265,8 +262,8 @@ class _GradeBadge extends StatelessWidget {
       height: 76,
       alignment: Alignment.center,
       decoration: BoxDecoration(
+        shape: BoxShape.circle,
         color: Theme.of(context).colorScheme.primary,
-        borderRadius: BorderRadius.circular(cmCorner),
       ),
       child: Text(
         grade,
@@ -344,7 +341,7 @@ class _MetricTile extends StatelessWidget {
               height: 36,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(cmCorner),
+                borderRadius: BorderRadius.circular(8),
                 color: scheme.primary.withAlpha(
                   Theme.of(context).brightness == Brightness.dark ? 34 : 18,
                 ),
@@ -421,14 +418,8 @@ class _RecommendationPanel extends StatelessWidget {
               ),
             ),
             if (subject != null)
-              Container(
-                width: 40,
-                height: 40,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: parseColor(subject.color),
-                  borderRadius: BorderRadius.circular(cmCorner),
-                ),
+              CircleAvatar(
+                backgroundColor: parseColor(subject.color),
                 child: Text(
                   subject.name.characters.first,
                   style: const TextStyle(color: Colors.white),
@@ -460,14 +451,8 @@ class _SubjectPlanRow extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(cmCorner),
-                  ),
+                CircleAvatar(
+                  backgroundColor: color,
                   child: Text(
                     subject.name.characters.first,
                     style: const TextStyle(color: Colors.white),
@@ -499,7 +484,7 @@ class _SubjectPlanRow extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: progress,
                 minHeight: 8,
@@ -530,13 +515,9 @@ class _TaskRow extends StatelessWidget {
         subtitle: Text(
           '${task.subject.name} · ${formatMinutes(task.plannedMinutes)}',
         ),
-        secondary: Container(
-          width: 20,
-          height: 20,
-          decoration: BoxDecoration(
-            color: parseColor(task.subject.color),
-            borderRadius: BorderRadius.circular(2),
-          ),
+        secondary: CircleAvatar(
+          backgroundColor: parseColor(task.subject.color),
+          radius: 10,
         ),
       ),
     );

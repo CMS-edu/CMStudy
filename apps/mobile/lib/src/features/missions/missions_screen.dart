@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../core/sheet_frame.dart';
 import '../../models/models.dart';
@@ -131,7 +131,7 @@ class _MissionHero extends StatelessWidget {
               height: 72,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(3),
+                shape: BoxShape.circle,
                 color: Theme.of(context).colorScheme.primaryContainer,
               ),
               child: Text(
@@ -161,7 +161,7 @@ class _MissionHero extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(999),
                     child: LinearProgressIndicator(
                       value: total == 0 ? 0 : completed / total,
                       minHeight: 8,
@@ -264,7 +264,7 @@ class _InlineError extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(8),
         color: color.withAlpha(22),
       ),
       child: Row(
@@ -374,7 +374,7 @@ class _GroupDirectoryCard extends StatelessWidget {
             ],
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: (group.progressPercent / 100).clamp(0.0, 1.0),
                 minHeight: 7,
@@ -427,7 +427,7 @@ class _StatusPill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(999),
         color: color.withAlpha(24),
       ),
       child: Text(
@@ -513,7 +513,7 @@ class _TimeMissionCard extends StatelessWidget {
                   height: 42,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(8),
                     color: color.withAlpha(24),
                   ),
                   child: Icon(
@@ -570,7 +570,7 @@ class _TimeMissionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: (mission.progressPercent / 100).clamp(0.0, 1.0),
                 minHeight: 9,
@@ -605,7 +605,7 @@ class _MetricLine extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(8),
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
       child: Column(
@@ -664,7 +664,7 @@ class _PersonalMissionCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: (mission.progressPercent / 100).clamp(0.0, 1.0),
                 minHeight: 8,
@@ -765,7 +765,7 @@ class _MissionGroupCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             ClipRRect(
-              borderRadius: BorderRadius.circular(3),
+              borderRadius: BorderRadius.circular(999),
               child: LinearProgressIndicator(
                 value: (group.progressPercent / 100).clamp(0.0, 1.0),
                 minHeight: 9,
@@ -823,7 +823,7 @@ class _InviteCode extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(3),
+        borderRadius: BorderRadius.circular(8),
         color: Theme.of(context).colorScheme.surfaceContainerHighest,
       ),
       child: Text(code, style: const TextStyle(fontWeight: FontWeight.w900)),
@@ -848,7 +848,7 @@ class _MemberRow extends StatelessWidget {
           height: 30,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(3),
+            shape: BoxShape.circle,
             color: color.withAlpha(member.isCurrentUser ? 32 : 18),
           ),
           child: Text(
@@ -868,7 +868,7 @@ class _MemberRow extends StatelessWidget {
         SizedBox(
           width: 82,
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(3),
+            borderRadius: BorderRadius.circular(999),
             child: LinearProgressIndicator(
               value: (member.progressPercent / 100).clamp(0.0, 1.0),
               minHeight: 6,
@@ -1120,7 +1120,7 @@ Future<void> showGroupDetailSheet(
               ),
               const SizedBox(height: 14),
               ClipRRect(
-                borderRadius: BorderRadius.circular(3),
+                borderRadius: BorderRadius.circular(999),
                 child: LinearProgressIndicator(
                   value: (group.progressPercent / 100).clamp(0.0, 1.0),
                   minHeight: 9,

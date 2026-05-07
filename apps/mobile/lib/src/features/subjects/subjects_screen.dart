@@ -121,14 +121,8 @@ class _SubjectTile extends StatelessWidget {
     final color = parseColor(subject.color);
     return Card(
       child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(3),
-          ),
+        leading: CircleAvatar(
+          backgroundColor: color,
           child: Text(
             subject.name.characters.first,
             style: const TextStyle(color: Colors.white),
@@ -235,13 +229,13 @@ Future<void> showSubjectSheet(
                     final selected = item == color;
                     return InkWell(
                       onTap: () => setModalState(() => color = item),
-                      borderRadius: BorderRadius.circular(3),
+                      customBorder: const CircleBorder(),
                       child: Container(
                         width: 38,
                         height: 38,
                         decoration: BoxDecoration(
                           color: parseColor(item),
-                          borderRadius: BorderRadius.circular(3),
+                          shape: BoxShape.circle,
                           border: selected
                               ? Border.all(
                                   color: Theme.of(

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../core/assets.dart';
+import '../career/career_profile_screen.dart';
 import '../../models/models.dart';
 import '../../state/app_controller.dart';
 
@@ -22,6 +23,8 @@ class DashboardScreen extends StatelessWidget {
           _CommandHero(controller: controller, snapshot: snapshot),
           const SizedBox(height: 14),
           _MetricStrip(snapshot: snapshot),
+          const SizedBox(height: 18),
+          const _CareerProfilePanel(),
           const SizedBox(height: 18),
           _RecommendationPanel(snapshot: snapshot),
           const SizedBox(height: 18),
@@ -131,6 +134,152 @@ class StudyCoachSnapshot {
       recommendedReason: recommendationReason(
         recommended,
         controller.stats.todaySubjectMinutes,
+      ),
+    );
+  }
+}
+
+class _CareerProfilePanel extends StatefulWidget {
+  const _CareerProfilePanel();
+
+  @override
+  State<_CareerProfilePanel> createState() => _CareerProfilePanelState();
+}
+
+class _CareerProfilePanelState extends State<_CareerProfilePanel> {
+  late Future<List<CareerPath>> profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    profileFuture = loadCareerProfile();
+  }
+
+  void refresh() {
+    setState(() => profileFuture = loadCareerProfile());
+  }
+
+  Future<void> openProfile() async {
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const CareerProfileScreen()));
+    refresh();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return FutureBuilder<List<CareerPath>>(
+      future: profileFuture,
+      builder: (context, snapshot) {
+        final paths = snapshot.data ?? const <CareerPath>[];
+        final hasProfile = paths.isNotEmpty;
+        final subjects = paths
+            .expand((path) => path.subjects)
+            .toSet()
+            .take(5)
+            .toList();
+        final majors = paths.expand((path) => path.majors).take(4).toList();
+
+        return Card(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: scheme.primary.withAlpha(24),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.route_outlined, color: scheme.primary),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hasProfile ? '내 진로 프로필' : '진로 프로필 설정',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w900),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            hasProfile
+                                ? paths.map((path) => path.category).join(' · ')
+                                : '관심 진로를 설정하면 추천 과목과 활동이 홈에 유지됩니다.',
+                            style: TextStyle(
+                              color: scheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                if (hasProfile) ...[
+                  const SizedBox(height: 12),
+                  _MiniChips(title: '추천 과목', values: subjects),
+                  _MiniChips(title: '관련 학과', values: majors),
+                ],
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: openProfile,
+                  icon: const Icon(Icons.edit_note_outlined),
+                  label: Text(hasProfile ? '진로 프로필 수정' : '진로 프로필 만들기'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MiniChips extends StatelessWidget {
+  const _MiniChips({required this.title, required this.values});
+
+  final String title;
+  final List<String> values;
+
+  @override
+  Widget build(BuildContext context) {
+    if (values.isEmpty) return const SizedBox.shrink();
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.w900)),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: values
+                .map(
+                  (value) => Chip(
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: scheme.primary.withAlpha(22),
+                    side: BorderSide(color: scheme.primary.withAlpha(85)),
+                    labelStyle: TextStyle(
+                      color: scheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    label: Text(value),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
       ),
     );
   }

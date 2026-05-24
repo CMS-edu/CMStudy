@@ -1,0 +1,5 @@
+{
+  "buildCommand": "bash scripts/vercel_build.sh",
+  "installCommand": "echo \"Skipping install\"",
+  "outputDirectory": "build/web"
+}

@@ -7,6 +7,7 @@ import '../../../services/inseoul_major_service.dart';
 
 const _careerProfileKey = 'cmstudy_career_profile_ids';
 const _myGradeKey = 'cmstudy_my_grade';
+const _selectedMajorsKey = 'cmstudy_selected_major_keys';
 
 class CareerPath {
   const CareerPath({
@@ -288,6 +289,7 @@ class _CareerProfileScreenState extends State<CareerProfileScreen> {
   List<CareerPath> selected = [];
   List<CareerPath> surveyCandidates = [];
   List<int> survey = List.filled(_surveyQuestions.length, 3);
+  Set<String> selectedMajorKeys = {};
   double? myGrade;
 
   @override
@@ -297,6 +299,7 @@ class _CareerProfileScreenState extends State<CareerProfileScreen> {
       if (mounted) setState(() => selected = paths);
     });
     _loadMyGrade();
+    _loadSelectedMajors();
   }
 
   @override
@@ -314,6 +317,13 @@ class _CareerProfileScreenState extends State<CareerProfileScreen> {
       myGrade = savedGrade;
       gradeController.text = savedGrade?.toStringAsFixed(1) ?? '';
     });
+  }
+
+  Future<void> _loadSelectedMajors() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList(_selectedMajorsKey) ?? const [];
+    if (!mounted) return;
+    setState(() => selectedMajorKeys = saved.toSet());
   }
 
   Future<void> _updateMyGrade(String value) async {
@@ -373,9 +383,11 @@ class _CareerProfileScreenState extends State<CareerProfileScreen> {
 
   Future<void> clear() async {
     await clearCareerProfile();
+    await _saveSelectedMajorKeys({});
     setState(() {
       selected = [];
       surveyCandidates = [];
+      selectedMajorKeys = {};
     });
   }
 
@@ -387,6 +399,34 @@ class _CareerProfileScreenState extends State<CareerProfileScreen> {
         selected = [...selected, path];
       }
     });
+  }
+
+  Future<void> _toggleMajorSelection(Map<String, dynamic> major) async {
+    final key = _majorKey(major);
+    final next = Set<String>.from(selectedMajorKeys);
+    if (next.contains(key)) {
+      next.remove(key);
+    } else {
+      next.add(key);
+    }
+    setState(() => selectedMajorKeys = next);
+    await _saveSelectedMajorKeys(next);
+  }
+
+  Future<void> _removeSelectedMajor(String key) async {
+    final next = Set<String>.from(selectedMajorKeys)..remove(key);
+    setState(() => selectedMajorKeys = next);
+    await _saveSelectedMajorKeys(next);
+  }
+
+  Future<void> _clearSelectedMajors() async {
+    setState(() => selectedMajorKeys = {});
+    await _saveSelectedMajorKeys({});
+  }
+
+  Future<void> _saveSelectedMajorKeys(Set<String> keys) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_selectedMajorsKey, keys.toList());
   }
 
   @override
@@ -550,8 +590,21 @@ class _CareerProfileScreenState extends State<CareerProfileScreen> {
               ),
             )
           else ...[
+            if (selectedMajorKeys.isNotEmpty) ...[
+              _SelectedMajorPanel(
+                majorKeys: selectedMajorKeys.toList(),
+                onRemove: _removeSelectedMajor,
+                onClear: _clearSelectedMajors,
+              ),
+              const SizedBox(height: 10),
+            ],
             for (final path in selected) ...[
-              _CareerResultCard(path: path, myGrade: myGrade),
+              _CareerResultCard(
+                path: path,
+                myGrade: myGrade,
+                selectedMajorKeys: selectedMajorKeys,
+                onMajorToggle: _toggleMajorSelection,
+              ),
               const SizedBox(height: 10),
             ],
             Row(
@@ -632,11 +685,73 @@ const _surveyWeights = {
 
 enum _MajorFitFilter { all, stable, match, reach }
 
+class _SelectedMajorPanel extends StatelessWidget {
+  const _SelectedMajorPanel({
+    required this.majorKeys,
+    required this.onRemove,
+    required this.onClear,
+  });
+
+  final List<String> majorKeys;
+  final ValueChanged<String> onRemove;
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return _CareerPanel(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '내가 선택한 학과',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onClear,
+                icon: const Icon(Icons.clear_all, size: 18),
+                label: const Text('전체 해제'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: majorKeys.map((key) {
+              return InputChip(
+                label: Text(_majorLabelFromKey(key)),
+                selected: true,
+                selectedColor: scheme.primary.withAlpha(30),
+                side: BorderSide(color: scheme.primary.withAlpha(90)),
+                onDeleted: () => onRemove(key),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _CareerResultCard extends StatefulWidget {
-  const _CareerResultCard({required this.path, required this.myGrade});
+  const _CareerResultCard({
+    required this.path,
+    required this.myGrade,
+    required this.selectedMajorKeys,
+    required this.onMajorToggle,
+  });
 
   final CareerPath path;
   final double? myGrade;
+  final Set<String> selectedMajorKeys;
+  final ValueChanged<Map<String, dynamic>> onMajorToggle;
 
   @override
   State<_CareerResultCard> createState() => _CareerResultCardState();
@@ -686,7 +801,9 @@ class _CareerResultCardState extends State<_CareerResultCard> {
             future: majorsFuture,
             myGrade: widget.myGrade,
             filter: filter,
+            selectedMajorKeys: widget.selectedMajorKeys,
             onFilterChanged: (value) => setState(() => filter = value),
+            onMajorToggle: widget.onMajorToggle,
           ),
           _ChipSection(title: '추천 선택과목', values: widget.path.subjects),
           _ChipSection(title: '진로 준비 활동', values: widget.path.activities),
@@ -706,13 +823,17 @@ class _InseoulMajorSection extends StatelessWidget {
     required this.future,
     required this.myGrade,
     required this.filter,
+    required this.selectedMajorKeys,
     required this.onFilterChanged,
+    required this.onMajorToggle,
   });
 
   final Future<List<Map<String, dynamic>>> future;
   final double? myGrade;
   final _MajorFitFilter filter;
+  final Set<String> selectedMajorKeys;
   final ValueChanged<_MajorFitFilter> onFilterChanged;
+  final ValueChanged<Map<String, dynamic>> onMajorToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -763,28 +884,29 @@ class _InseoulMajorSection extends StatelessWidget {
                 );
               }
 
-              final visible = filtered.take(10).toList();
-              final rest = filtered.length - visible.length;
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ...visible.map(
-                    (major) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: _MajorLine(major: major, myGrade: myGrade),
+                  Text(
+                    '총 ${filtered.length}개 학과를 모두 표시합니다. 원하는 학과를 눌러 선택하세요.',
+                    style: TextStyle(
+                      color: scheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w700,
+                      height: 1.35,
                     ),
                   ),
-                  if (rest > 0)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 2),
-                      child: Text(
-                        '외 $rest개',
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w800,
-                        ),
+                  const SizedBox(height: 8),
+                  ...filtered.map(
+                    (major) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: _MajorLine(
+                        major: major,
+                        myGrade: myGrade,
+                        selected: selectedMajorKeys.contains(_majorKey(major)),
+                        onTap: () => onMajorToggle(major),
                       ),
                     ),
+                  ),
                 ],
               );
             },
@@ -796,10 +918,17 @@ class _InseoulMajorSection extends StatelessWidget {
 }
 
 class _MajorLine extends StatelessWidget {
-  const _MajorLine({required this.major, required this.myGrade});
+  const _MajorLine({
+    required this.major,
+    required this.myGrade,
+    required this.selected,
+    required this.onTap,
+  });
 
   final Map<String, dynamic> major;
   final double? myGrade;
+  final bool selected;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -807,29 +936,44 @@ class _MajorLine extends StatelessWidget {
     final university = major['university']?.toString() ?? '';
     final name = major['name']?.toString() ?? '';
     final fit = myGrade == null ? null : _majorFit(myGrade!, major);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: scheme.primary.withAlpha(14),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: scheme.primary.withAlpha(55)),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              '$university · $name',
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected
+              ? scheme.primary.withAlpha(32)
+              : scheme.primary.withAlpha(14),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? scheme.primary : scheme.primary.withAlpha(55),
+            width: selected ? 1.4 : 1,
           ),
-          if (fit != null) ...[
-            const SizedBox(width: 8),
-            Text(
-              fit.label,
-              style: TextStyle(color: fit.color, fontWeight: FontWeight.w900),
+        ),
+        child: Row(
+          children: [
+            Icon(
+              selected ? Icons.check_circle : Icons.radio_button_unchecked,
+              size: 20,
+              color: selected ? scheme.primary : scheme.onSurfaceVariant,
             ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                '$university · $name',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            if (fit != null) ...[
+              const SizedBox(width: 8),
+              Text(
+                fit.label,
+                style: TextStyle(color: fit.color, fontWeight: FontWeight.w900),
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -875,6 +1019,18 @@ double? _readCutoff(Object? value) {
   if (value is num) return value.toDouble();
   if (value is String) return double.tryParse(value);
   return null;
+}
+
+String _majorKey(Map<String, dynamic> major) {
+  final university = major['university']?.toString() ?? '';
+  final name = major['name']?.toString() ?? '';
+  return '$university||$name';
+}
+
+String _majorLabelFromKey(String key) {
+  final parts = key.split('||');
+  if (parts.length < 2) return key;
+  return '${parts.first} · ${parts.sublist(1).join('||')}';
 }
 
 String _filterLabel(_MajorFitFilter filter) {

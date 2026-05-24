@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 
+const unassignedSubjectName = '미분류';
+
 @Injectable()
 export class StatsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -43,15 +45,13 @@ export class StatsService {
 
     for (const session of sessions) {
       const key = toLocalDateKey(session.startedAt, timezoneOffsetMinutes);
+      const subjectName = session.subject?.name ?? unassignedSubjectName;
       daily.set(key, (daily.get(key) ?? 0) + session.durationMinutes);
-      if (session.subject) {
-        subjectMinutes[session.subject.name] =
-          (subjectMinutes[session.subject.name] ?? 0) + session.durationMinutes;
-        if (key === dateKeys[dateKeys.length - 1]) {
-          todaySubjectMinutes[session.subject.name] =
-            (todaySubjectMinutes[session.subject.name] ?? 0) +
-            session.durationMinutes;
-        }
+      subjectMinutes[subjectName] =
+        (subjectMinutes[subjectName] ?? 0) + session.durationMinutes;
+      if (key === dateKeys[dateKeys.length - 1]) {
+        todaySubjectMinutes[subjectName] =
+          (todaySubjectMinutes[subjectName] ?? 0) + session.durationMinutes;
       }
     }
 
@@ -128,10 +128,9 @@ function buildPeriodStats(
     daily.set(key, (daily.get(key) ?? 0) + session.durationMinutes);
     const monthKey = key.slice(0, 7);
     monthly.set(monthKey, (monthly.get(monthKey) ?? 0) + session.durationMinutes);
-    if (session.subject) {
-      subjectMinutes[session.subject.name] =
-        (subjectMinutes[session.subject.name] ?? 0) + session.durationMinutes;
-    }
+    const subjectName = session.subject?.name ?? unassignedSubjectName;
+    subjectMinutes[subjectName] =
+      (subjectMinutes[subjectName] ?? 0) + session.durationMinutes;
   }
 
   const dailyList =

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
+
+import 'package:http/http.dart' as http;
 
 import '../models/models.dart';
 
@@ -243,23 +244,25 @@ class ApiClient {
     Object? body,
   }) async {
     final uri = Uri.parse('$baseUrl$path').replace(queryParameters: query);
-    final client = HttpClient()..connectionTimeout = requestTimeout;
+    final client = http.Client();
     try {
-      final request = await client.openUrl(method, uri).timeout(requestTimeout);
-      request.headers.contentType = ContentType.json;
+      final request = http.Request(method, uri)
+        ..headers['Content-Type'] = 'application/json';
       if (token != null) {
-        request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $token');
+        request.headers['Authorization'] = 'Bearer $token';
       }
       if (body != null) {
-        request.write(jsonEncode(body));
+        request.body = jsonEncode(body);
       }
 
-      final response = await request.close().timeout(requestTimeout);
-      final text = await utf8.decoder
-          .bind(response)
-          .join()
-          .timeout(requestTimeout);
-      final decoded = text.isEmpty ? <String, dynamic>{} : jsonDecode(text);
+      final streamed = await client.send(request).timeout(requestTimeout);
+      final response = await http.Response.fromStream(
+        streamed,
+      ).timeout(requestTimeout);
+      final text = utf8.decode(response.bodyBytes);
+      final decoded = text.isEmpty
+          ? <String, dynamic>{}
+          : jsonDecode(text) as Object?;
 
       if (response.statusCode < 200 || response.statusCode >= 300) {
         final message = decoded is Map<String, dynamic>
@@ -269,12 +272,14 @@ class ApiClient {
       }
 
       return decoded is Map<String, dynamic> ? decoded : <String, dynamic>{};
-    } on SocketException {
-      throw const ApiException('서버에 연결할 수 없습니다. API 서버가 켜져 있는지 확인하세요.');
+    } on http.ClientException {
+      throw const ApiException('서버에 연결할 수 없습니다. API 서버 주소와 CORS 설정을 확인하세요.');
+    } on FormatException {
+      throw const ApiException('서버 응답을 읽을 수 없습니다.');
     } on TimeoutException {
       throw const ApiException('서버가 깨어나는 중입니다. 1분 뒤 다시 시도하세요.');
     } finally {
-      client.close(force: true);
+      client.close();
     }
   }
 }

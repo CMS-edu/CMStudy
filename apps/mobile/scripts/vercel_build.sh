@@ -15,5 +15,7 @@ flutter config --enable-web
 flutter pub get
 flutter build web \
   --release \
+  --no-source-maps \
+  -O4 \
   --no-wasm-dry-run \
   --dart-define=API_BASE_URL="$API_BASE_URL"
